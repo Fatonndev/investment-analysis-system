@@ -1,74 +1,102 @@
-# Steel Pipe Production Financial Analysis System
+# Программная система анализа и прогнозирования рентабельности инвестиций трубопрокатного завода
 
-This is a simple financial analysis system for steel pipe production developed with PHP and MySQL. The system allows for collection and processing of financial-economic data, calculation of investment profitability metrics, forecasting, and sensitivity analysis.
+## Описание проекта
 
-## Features
+Данная система предназначена для анализа и прогнозирования рентабельности инвестиционных проектов трубопрокатного производства. Система позволяет собирать и обрабатывать финансово-экономические данные, рассчитывать ключевые показатели эффективности инвестиций, прогнозировать финансовую эффективность и визуализировать результаты.
 
-1. **Data Management**:
-   - Input production data (volumes, costs, prices)
-   - Track various types of costs (raw materials, energy, logistics, etc.)
-   - Record market prices by product type and region
-   - Register investments
+## Функциональные возможности
 
-2. **Financial Calculations**:
-   - ROI (Return on Investment)
-   - NPV (Net Present Value)
-   - IRR (Internal Rate of Return)
-   - Payback Period
-   - Break-even Analysis
+### 1. Сбор и обработка данных
+- Загрузка и хранение исторических и текущих данных о производстве
+- Ввод информации о затратах (сырьё, энергоносители, логистика, заработная плата, амортизация)
+- Учёт рыночных цен на готовую продукцию
+- Возможность ручного ввода или импорта данных из Excel-файлов
 
-3. **Forecasting**:
-   - Revenue forecasting using linear regression
-   - 12-month projection
+### 2. Расчёт показателей рентабельности
+- ROI (рентабельность инвестиций)
+- NPV (чистая приведённая стоимость)
+- IRR (внутренняя норма доходности)
+- Срок окупаемости
+- Анализ безубыточности
+- Оценка чувствительности проекта к изменению ключевых параметров
 
-4. **Sensitivity Analysis**:
-   - Impact assessment of steel price changes
-   - Impact assessment of demand fluctuations
+### 3. Прогнозирование
+- Построение прогноза выручки, себестоимости и прибыли
+- Применение методов прогнозирования (линейная регрессия, скользящее среднее)
+- Визуализация прогнозных сценариев: оптимистичный, базовый, пессимистичный
 
-## Files Structure
+### 4. Визуализация
+- Отображение динамики ключевых финансовых показателей
+- Интерактивные диаграммы структуры затрат
+- Сравнение план/факт
+- Наглядное представление результатов прогноза
 
-- `config.php` - Database configuration
-- `finance_calculator.php` - Main business logic and calculations
-- `database.sql` - Database schema
-- `index.php` - Main application interface
-- `README.md` - This file
+### 5. Пользовательский интерфейс
+- Управление проектами
+- Простой и интуитивно понятный интерфейс
+- Настройка параметров анализа
+- Экспорт отчётов в форматы PDF и Excel
 
-## Installation
+## Технические требования
 
-1. Make sure you have PHP and MySQL installed
-2. Import the database schema:
-   ```sql
-   mysql -u root -p < database.sql
-   ```
-3. Update the database credentials in `config.php` if needed
-4. Place all files in your web server directory
-5. Access the application through your browser
+- PHP 7.4 или выше
+- MySQL 5.7 или выше
+- Веб-сервер (Apache, Nginx)
+- JavaScript (для интерактивности и визуализации)
 
-## Usage
+## Установка
 
-1. Navigate to the input tab to enter production data, costs, market prices, and investments
-2. Go to the analysis tab to see calculated financial metrics
-3. Check the forecasting tab for projected revenues
-4. Use the sensitivity analysis tab to see how changes affect profitability
+1. Скопируйте файлы проекта на веб-сервер
+2. Настройте веб-сервер для использования папки проекта как корневой директории
+3. Создайте базу данных MySQL
+4. Обновите параметры подключения к базе данных в файле `config.php`
+5. Откройте веб-браузер и перейдите на главную страницу проекта
 
-## Error Handling
+## Структура проекта
 
-The system includes error handling for:
-- Missing input data
-- Invalid numeric values
-- Database errors
-- Insufficient data for calculations
-- Calculation convergence issues
+```
+/workspace/
+├── config.php                 # Конфигурационный файл
+├── index.php                  # Главная страница
+├── generate_report.php        # Генерация отчетов
+├── css/
+│   └── style.css             # Стили
+├── js/
+│   └── main.js               # JavaScript
+├── includes/
+│   ├── database.php          # Класс для работы с базой данных
+│   └── calculations.php      # Класс для расчетов
+├── pages/
+│   ├── dashboard.php         # Панель управления
+│   ├── projects.php          # Управление проектами
+│   ├── data_input.php        # Ввод данных
+│   ├── analysis.php          # Анализ проектов
+│   └── reports.php           # Отчеты
+├── uploads/                  # Загрузка файлов
+└── reports/                  # Генерация отчетов
+```
 
-## Technologies Used
+## Используемые технологии
 
-- PHP 7.0+
-- MySQL
-- HTML/CSS/JavaScript
-- PDO for database operations
+- PHP для серверной логики
+- MySQL для хранения данных
+- HTML/CSS/JavaScript для интерфейса
+- Chart.js для визуализации данных
+- MySQLi для работы с базой данных
 
-## Notes
+## Особенности реализации
 
-- This system uses simplified financial models for educational purposes
-- For real-world applications, more complex models would be needed
-- The forecasting uses basic linear regression which may not capture complex trends
+- Без использования Composer - все зависимости встроены
+- Адаптивный дизайн для разных устройств
+- Полную функциональность экспорта в PDF/Excel можно реализовать с использованием соответствующих библиотек
+- Обработка ошибок и валидация входных данных
+- Защита от SQL-инъекций через подготовленные выражения
+
+## Дальнейшее развитие
+
+Для полной реализации всех функций рекомендуется:
+- Интеграция библиотек для работы с Excel (PhpSpreadsheet)
+- Интеграция библиотек для генерации PDF (TCPDF или FPDF)
+- Добавление системы аутентификации пользователей
+- Реализация более сложных методов прогнозирования
+- Добавление механизма резервного копирования данных

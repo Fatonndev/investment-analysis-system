@@ -3,16 +3,17 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'steel_pipe_finance');
+define('DB_NAME', 'pipe_mill_analysis');
 
-// Create connection
-function getConnection() {
-    try {
-        $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        return $pdo;
-    } catch(PDOException $e) {
-        die("Connection failed: " . $e->getMessage());
-    }
-}
+// Application settings
+define('APP_NAME', 'Программная система анализа и прогнозирования рентабельности инвестиций трубопрокатного завода');
+define('UPLOAD_DIR', __DIR__ . '/uploads/');
+define('REPORT_DIR', __DIR__ . '/reports/');
+
+// Error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Start session
+session_start();
 ?>
