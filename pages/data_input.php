@@ -393,6 +393,16 @@
 </div>
 
 <script>
+// Store current tab in session storage to preserve state across page reloads
+function setCurrentTab(tabName) {
+    sessionStorage.setItem('currentDataInputTab', tabName);
+}
+
+// Get current tab from session storage
+function getCurrentTab() {
+    return sessionStorage.getItem('currentDataInputTab');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Tab functionality
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -410,6 +420,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show corresponding pane
             const tabId = btn.getAttribute('data-tab') + '-tab';
             document.getElementById(tabId).classList.add('active');
+            
+            // Store the current tab in session storage
+            const tabName = btn.getAttribute('data-tab');
+            setCurrentTab(tabName);
         });
     });
     
@@ -429,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set initial state
     toggleCostFields();
     
-    // Check URL parameter to activate the correct tab
+    // Check URL parameter to activate the correct tab (highest priority)
     const urlParams = new URLSearchParams(window.location.search);
     const activeTab = urlParams.get('tab');
     
@@ -445,6 +459,26 @@ document.addEventListener('DOMContentLoaded', function() {
         if (targetBtn && targetPane) {
             targetBtn.classList.add('active');
             targetPane.classList.add('active');
+        }
+        
+        // Also store in session storage
+        setCurrentTab(activeTab);
+    } else {
+        // If no URL parameter, check session storage
+        const storedTab = getCurrentTab();
+        if (storedTab) {
+            // Remove active class from all buttons and panes
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabPanes.forEach(p => p.classList.remove('active'));
+            
+            // Find and activate the stored tab
+            const targetBtn = document.querySelector(`.tab-btn[data-tab="${storedTab}"]`);
+            const targetPane = document.getElementById(`${storedTab}-tab`);
+            
+            if (targetBtn && targetPane) {
+                targetBtn.classList.add('active');
+                targetPane.classList.add('active');
+            }
         }
     }
 });
