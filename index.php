@@ -25,6 +25,7 @@ $action = $_GET['action'] ?? 'dashboard';
             <ul>
                 <li><a href="?action=dashboard">Панель управления</a></li>
                 <li><a href="?action=projects">Проекты</a></li>
+                <li><a href="?action=product-types">Типы продукции</a></li>
                 <li><a href="?action=data-input">Ввод данных</a></li>
                 <li><a href="?action=analysis">Анализ</a></li>
                 <li><a href="?action=reports">Отчеты</a></li>
@@ -40,6 +41,9 @@ $action = $_GET['action'] ?? 'dashboard';
                 break;
             case 'projects':
                 include 'pages/projects.php';
+                break;
+            case 'product-types':
+                include 'pages/product_types.php';
                 break;
             case 'data-input':
                 include 'pages/data_input.php';
