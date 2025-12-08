@@ -102,10 +102,10 @@
                     echo "<td>" . $data['period'] . "</td>";
                     echo "<td>" . htmlspecialchars($data['product_type']) . "</td>";
                     echo "<td>" . $data['quantity'] . "</td>";
-                    echo "<td>" . htmlspecialchars($data['unit']) . "</td>";
-                    echo "<td>" . number_format($data['revenue'], 2, '.', ' ') . "</td>";
-                    echo "<td>" . number_format($data['variable_costs'], 2, '.', ' ') . "</td>";
-                    echo "<td>" . number_format($data['fixed_costs'], 2, '.', ' ') . "</td>";
+                    echo "<td>" . htmlspecialchars($data['unit'] ?? '') . "</td>";
+                    echo "<td>" . number_format($data['revenue'] ?? 0, 2, '.', ' ') . "</td>";
+                    echo "<td>" . number_format($data['variable_costs'] ?? 0, 2, '.', ' ') . "</td>";
+                    echo "<td>" . number_format($data['fixed_costs'] ?? 0, 2, '.', ' ') . "</td>";
                     echo "<td><a href='?action=data-input&project_id=$projectId&delete_prod=" . $data['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
                     echo "</tr>";
                 }
@@ -362,6 +362,25 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set initial state
     toggleCostFields();
+    
+    // Check URL parameter to activate the correct tab
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    
+    if (activeTab) {
+        // Remove active class from all buttons and panes
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabPanes.forEach(p => p.classList.remove('active'));
+        
+        // Find and activate the requested tab
+        const targetBtn = document.querySelector(`.tab-btn[data-tab="${activeTab}"]`);
+        const targetPane = document.getElementById(`${activeTab}-tab`);
+        
+        if (targetBtn && targetPane) {
+            targetBtn.classList.add('active');
+            targetPane.classList.add('active');
+        }
+    }
 });
 
 // Handle form submissions
@@ -381,14 +400,15 @@ if ($_POST['action'] ?? '' == 'add_production') {
     
     $db->insert('production_data', $data);
     echo "alert('Производственные данные успешно добавлены!');";
-}
+    // Redirect to prevent re-submission and stay on the production tab
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=production';";
 
 if (isset($_GET['delete_prod'])) {
     $prodId = (int)$_GET['delete_prod'];
     $db->executeQuery("DELETE FROM production_data WHERE id = ?", [$prodId]);
     echo "alert('Данные успешно удалены!');";
-    // Redirect to remove the delete_prod parameter from URL to prevent repeated deletion
-    echo "window.location.href = window.location.href.replace(/&delete_prod=\\d+/, '');";
+    // Redirect to remove the delete_prod parameter from URL to prevent repeated deletion and stay on the production tab
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=production';";
 }
 
 if ($_POST['action'] ?? '' == 'add_cost') {
@@ -423,6 +443,8 @@ if ($_POST['action'] ?? '' == 'add_cost') {
     }
     
     echo "alert('Затраты успешно добавлены!');";
+    // Redirect to prevent re-submission and stay on the costs tab
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=costs';";
 }
 
 if ($_POST['action'] ?? '' == 'add_price') {
@@ -439,14 +461,16 @@ if ($_POST['action'] ?? '' == 'add_price') {
     
     $db->insert('product_prices', $data);
     echo "alert('Цена успешно добавлена!');";
+    // Redirect to prevent re-submission and stay on the prices tab
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=prices';";
 }
 
 if (isset($_GET['delete_price'])) {
     $priceId = (int)$_GET['delete_price'];
     $db->executeQuery("DELETE FROM product_prices WHERE id = ?", [$priceId]);
-    // Redirect to remove the delete_price parameter from URL to prevent repeated deletion
+    // Redirect to remove the delete_price parameter from URL to prevent repeated deletion and stay on the prices tab
     echo "alert('Цена успешно удалена!');";
-    echo "window.location.href = window.location.href.replace(/&delete_price=\\d+/, '');";
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=prices';";
 }
 
 if ($_POST['action'] ?? '' == 'add_investment') {
@@ -460,10 +484,14 @@ if ($_POST['action'] ?? '' == 'add_investment') {
     
     $db->insert('investment_data', $data);
     echo "alert('Инвестиция успешно добавлена!');";
+    // Redirect to prevent re-submission and stay on the investments tab
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=investments';";
 }
 
 if ($_POST['action'] ?? '' == 'import_excel') {
     echo "alert('Функция импорта Excel временно недоступна в этой версии. Для полной реализации потребуется библиотека для работы с Excel файлами.');";
+    // Redirect to prevent re-submission and stay on the import tab
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=import';";
 }
 ?>
 </script>
