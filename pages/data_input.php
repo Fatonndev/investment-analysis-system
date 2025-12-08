@@ -680,78 +680,80 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Cost type selection functionality
     function toggleCostFields() {
-        const costType = document.getElementById('cost_type').value;
-        
+        const costType = document.getElementById("cost_type").value;
+
         // Hide all cost type fields and disable their inputs
-        const allCostFields = document.querySelectorAll('.cost-type-fields');
+        const allCostFields = document.querySelectorAll(".cost-type-fields");
         allCostFields.forEach(fieldGroup => {
-            fieldGroup.style.display = 'none';
-            // Disable all inputs within this group
-            const inputs = fieldGroup.querySelectorAll('input, select');
+            // Save required state for all inputs in this group before hiding
+            const inputs = fieldGroup.querySelectorAll("input, select");
+            inputs.forEach(input => {
+                if(input.hasAttribute("required")) {
+                    input.setAttribute("data-required", "required");
+                    input.removeAttribute("required");
+                }
+            });
+            
+            // Hide the field group and disable inputs
+            fieldGroup.style.display = "none";
             inputs.forEach(input => {
                 input.disabled = true;
-                // Remove required attribute when hidden
-                if(input.hasAttribute('required')) {
-                    input.removeAttribute('data-required');
-                    input.removeAttribute('required');
-                }
             });
         });
 
         // Show and enable fields for the selected cost type
-        if (costType === 'raw_material') {
-            document.getElementById('raw-material-fields').style.display = 'block';
-            const rawMaterialInputs = document.getElementById('raw-material-fields').querySelectorAll('input, select');
+        if (costType === "raw_material") {
+            document.getElementById("raw-material-fields").style.display = "block";
+            const rawMaterialInputs = document.getElementById("raw-material-fields").querySelectorAll("input, select");
             rawMaterialInputs.forEach(input => {
                 input.disabled = false;
                 // Restore required attribute if it was originally required
-                if(input.name === 'quantity_used' || input.name === 'cost_per_unit') {
-                    input.setAttribute('required', 'required');
+                if(input.hasAttribute("data-required")) {
+                    input.setAttribute("required", "required");
                 }
             });
-        } else if (costType === 'energy') {
-            document.getElementById('energy-fields').style.display = 'block';
-            const energyInputs = document.getElementById('energy-fields').querySelectorAll('input, select');
+        } else if (costType === "energy") {
+            document.getElementById("energy-fields").style.display = "block";
+            const energyInputs = document.getElementById("energy-fields").querySelectorAll("input, select");
             energyInputs.forEach(input => {
                 input.disabled = false;
                 // Restore required attribute if it was originally required
-                if(input.name === 'quantity_used' || input.name === 'cost_per_unit') {
-                    input.setAttribute('required', 'required');
+                if(input.hasAttribute("data-required")) {
+                    input.setAttribute("required", "required");
                 }
             });
-        } else if (costType === 'logistics') {
-            document.getElementById('logistics-fields').style.display = 'block';
-            const logisticsInputs = document.getElementById('logistics-fields').querySelectorAll('input, select');
+        } else if (costType === "logistics") {
+            document.getElementById("logistics-fields").style.display = "block";
+            const logisticsInputs = document.getElementById("logistics-fields").querySelectorAll("input, select");
             logisticsInputs.forEach(input => {
                 input.disabled = false;
                 // Restore required attribute if it was originally required
-                if(input.name === 'quantity_used' || input.name === 'cost_per_unit') {
-                    input.setAttribute('required', 'required');
+                if(input.hasAttribute("data-required")) {
+                    input.setAttribute("required", "required");
                 }
             });
-        } else if (costType === 'labor') {
-            document.getElementById('labor-fields').style.display = 'block';
-            const laborInputs = document.getElementById('labor-fields').querySelectorAll('input, select');
+        } else if (costType === "labor") {
+            document.getElementById("labor-fields").style.display = "block";
+            const laborInputs = document.getElementById("labor-fields").querySelectorAll("input, select");
             laborInputs.forEach(input => {
                 input.disabled = false;
                 // Restore required attribute if it was originally required
-                if(input.name === 'salary_cost' || input.name === 'benefits') {
-                    input.setAttribute('required', 'required');
+                if(input.hasAttribute("data-required")) {
+                    input.setAttribute("required", "required");
                 }
             });
-        } else if (costType === 'depreciation') {
-            document.getElementById('depreciation-fields').style.display = 'block';
-            const depreciationInputs = document.getElementById('depreciation-fields').querySelectorAll('input, select');
+        } else if (costType === "depreciation") {
+            document.getElementById("depreciation-fields").style.display = "block";
+            const depreciationInputs = document.getElementById("depreciation-fields").querySelectorAll("input, select");
             depreciationInputs.forEach(input => {
                 input.disabled = false;
                 // Restore required attribute if it was originally required
-                if(input.name === 'depreciation_amount') {
-                    input.setAttribute('required', 'required');
+                if(input.hasAttribute("data-required")) {
+                    input.setAttribute("required", "required");
                 }
             });
         }
-    }
-    
+
     // Set initial state
     toggleCostFields();
     
