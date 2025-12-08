@@ -387,7 +387,8 @@ if (isset($_GET['delete_prod'])) {
     $prodId = (int)$_GET['delete_prod'];
     $db->executeQuery("DELETE FROM production_data WHERE id = ?", [$prodId]);
     echo "alert('Данные успешно удалены!');";
-    echo "location.reload();";
+    // Redirect to remove the delete_prod parameter from URL to prevent repeated deletion
+    echo "window.location.href = window.location.href.replace(/&delete_prod=\\d+/, '');";
 }
 
 if ($_POST['action'] ?? '' == 'add_cost') {

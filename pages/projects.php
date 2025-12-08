@@ -45,6 +45,10 @@
             $projectId = (int)$_GET['delete_project'];
             $db->executeQuery("DELETE FROM projects WHERE id = ?", [$projectId]);
             echo "<div class='alert-success'>Проект успешно удален!</div>";
+            // Use JavaScript to remove the delete_project parameter from URL to prevent repeated deletion
+            echo "<script>if (window.location.href.indexOf('delete_project=') !== -1) { 
+                window.history.replaceState({}, document.title, window.location.href.replace(/&delete_project=\\d+/, ''));
+            }</script>";
         }
         
         $projects = $db->fetchAll("SELECT * FROM projects ORDER BY created_at DESC");
