@@ -1,5 +1,5 @@
 <?php
-require_once 'database.php';
+require_once dirname(__FILE__) . '/database.php';
 
 class InvestmentAnalysis {
     private $db;
