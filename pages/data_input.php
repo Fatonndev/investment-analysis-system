@@ -32,11 +32,11 @@
                 'project_id' => $projectId,
                 'period' => $period,
                 'product_type' => $_POST['product_type'],
-                'quantity' => $_POST['quantity'],
+                'quantity' => (float)$_POST['quantity'],
                 'unit' => $_POST['unit'],
-                'revenue' => $_POST['revenue'],
-                'variable_costs' => $_POST['variable_costs'],
-                'fixed_costs' => $_POST['fixed_costs']
+                'revenue' => (float)$_POST['revenue'],
+                'variable_costs' => (float)$_POST['variable_costs'],
+                'fixed_costs' => (float)$_POST['fixed_costs']
             ];
 
             $db->insert('production_data', $data);
@@ -55,8 +55,8 @@
                         'project_id' => $projectId,
                         'period' => $period,
                         'material_type' => $_POST['material_type'],
-                        'cost_per_unit' => $_POST['cost_per_unit'],
-                        'quantity_used' => $_POST['quantity_used'],
+                        'cost_per_unit' => (float)$_POST['cost_per_unit'],
+                        'quantity_used' => (float)$_POST['quantity_used'],
                         'total_cost' => $totalCost
                     ];
                     $db->insert('raw_material_costs', $data);
@@ -68,8 +68,8 @@
                         'project_id' => $projectId,
                         'period' => $period,
                         'energy_type' => $_POST['energy_type'],
-                        'cost_per_unit' => $_POST['cost_per_unit'],
-                        'quantity_used' => $_POST['quantity_used'],
+                        'cost_per_unit' => (float)$_POST['cost_per_unit'],
+                        'quantity_used' => (float)$_POST['quantity_used'],
                         'total_cost' => $totalCost
                     ];
                     $db->insert('energy_costs', $data);
@@ -80,7 +80,7 @@
                         'project_id' => $projectId,
                         'period' => $period,
                         'route' => $_POST['route'],
-                        'cost' => $_POST['cost']
+                        'cost' => (float)$_POST['cost']
                     ];
                     $db->insert('logistics_costs', $data);
                     break;
@@ -91,8 +91,8 @@
                         'project_id' => $projectId,
                         'period' => $period,
                         'department' => $_POST['department'],
-                        'salary_cost' => $_POST['salary_cost'],
-                        'benefits' => $_POST['benefits'],
+                        'salary_cost' => (float)$_POST['salary_cost'],
+                        'benefits' => (float)$_POST['benefits'],
                         'total_cost' => $totalCost
                     ];
                     $db->insert('labor_costs', $data);
@@ -103,7 +103,7 @@
                         'project_id' => $projectId,
                         'period' => $period,
                         'asset_name' => $_POST['asset_name'],
-                        'depreciation_amount' => $_POST['depreciation_amount']
+                        'depreciation_amount' => (float)$_POST['depreciation_amount']
                     ];
                     $db->insert('depreciation_costs', $data);
                     break;
@@ -122,7 +122,7 @@
                 'size_spec' => $_POST['size_spec'],
                 'precision_class' => $_POST['precision_class'],
                 'region' => $_POST['region'],
-                'price_per_unit' => $_POST['price_per_unit']
+                'price_per_unit' => (float)$_POST['price_per_unit']
             ];
 
             $db->insert('product_prices', $data);
@@ -135,7 +135,7 @@
                 'project_id' => $projectId,
                 'investment_type' => $_POST['investment_type'],
                 'description' => $_POST['description'],
-                'amount' => $_POST['amount'],
+                'amount' => (float)$_POST['amount'],
                 'investment_date' => $_POST['investment_date']
             ];
 
@@ -328,7 +328,7 @@
                     </div>
                 </div>
                 
-                <div id="raw-material-fields">
+                <div id="raw-material-fields" class="cost-type-fields">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="material_type">Тип материала:</label>
@@ -349,7 +349,7 @@
                     </div>
                 </div>
                 
-                <div id="energy-fields" style="display: none;">
+                <div id="energy-fields" class="cost-type-fields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="energy_type">Тип энергии:</label>
@@ -370,7 +370,7 @@
                     </div>
                 </div>
                 
-                <div id="logistics-fields" style="display: none;">
+                <div id="logistics-fields" class="cost-type-fields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="logistics_route">Маршрут/Направление:</label>
@@ -383,7 +383,7 @@
                     </div>
                 </div>
                 
-                <div id="labor-fields" style="display: none;">
+                <div id="labor-fields" class="cost-type-fields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="labor_department">Отдел/Подразделение:</label>
@@ -400,7 +400,7 @@
                     </div>
                 </div>
                 
-                <div id="depreciation-fields" style="display: none;">
+                <div id="depreciation-fields" class="cost-type-fields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="asset_name">Наименование актива:</label>
@@ -696,22 +696,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cost type selection functionality
     function toggleCostFields() {
         const costType = document.getElementById('cost_type').value;
-        document.getElementById('raw-material-fields').style.display = 'none';
-        document.getElementById('energy-fields').style.display = 'none';
-        document.getElementById('logistics-fields').style.display = 'none';
-        document.getElementById('labor-fields').style.display = 'none';
-        document.getElementById('depreciation-fields').style.display = 'none';
+        
+        // Hide all cost type fields and disable their inputs
+        const allCostFields = document.querySelectorAll('.cost-type-fields');
+        allCostFields.forEach(fieldGroup => {
+            fieldGroup.style.display = 'none';
+            // Disable all inputs within this group
+            const inputs = fieldGroup.querySelectorAll('input, select');
+            inputs.forEach(input => input.disabled = true);
+        });
 
+        // Show and enable fields for the selected cost type
         if (costType === 'raw_material') {
             document.getElementById('raw-material-fields').style.display = 'block';
+            const rawMaterialInputs = document.getElementById('raw-material-fields').querySelectorAll('input, select');
+            rawMaterialInputs.forEach(input => input.disabled = false);
         } else if (costType === 'energy') {
             document.getElementById('energy-fields').style.display = 'block';
+            const energyInputs = document.getElementById('energy-fields').querySelectorAll('input, select');
+            energyInputs.forEach(input => input.disabled = false);
         } else if (costType === 'logistics') {
             document.getElementById('logistics-fields').style.display = 'block';
+            const logisticsInputs = document.getElementById('logistics-fields').querySelectorAll('input, select');
+            logisticsInputs.forEach(input => input.disabled = false);
         } else if (costType === 'labor') {
             document.getElementById('labor-fields').style.display = 'block';
+            const laborInputs = document.getElementById('labor-fields').querySelectorAll('input, select');
+            laborInputs.forEach(input => input.disabled = false);
         } else if (costType === 'depreciation') {
             document.getElementById('depreciation-fields').style.display = 'block';
+            const depreciationInputs = document.getElementById('depreciation-fields').querySelectorAll('input, select');
+            depreciationInputs.forEach(input => input.disabled = false);
         }
     }
     
