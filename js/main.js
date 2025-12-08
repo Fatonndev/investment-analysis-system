@@ -182,3 +182,4 @@ function showNotification(message, type = 'info') {
         }, 300);
     }, 5000);
 }
+
