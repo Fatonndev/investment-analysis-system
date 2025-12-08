@@ -451,138 +451,137 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Handle form submissions
 <?php
-if ($_POST['action'] ?? '' == 'add_production') {
-    $period = $_POST['period'] . '-01'; // Convert month to first day of month
-    $data = [
-        'project_id' => $projectId,
-        'period' => $period,
-        'product_type' => $_POST['product_type'],
-        'quantity' => $_POST['quantity'],
-        'unit' => $_POST['unit'],
-        'revenue' => $_POST['revenue'],
-        'variable_costs' => $_POST['variable_costs'],
-        'fixed_costs' => $_POST['fixed_costs']
-    ];
+// Ensure we only process POST requests for form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
     
-    $db->insert('production_data', $data);
-    echo "alert('Производственные данные успешно добавлены!');";
-    // Redirect to prevent re-submission and stay on the production tab
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=production';";
-}
-
-if (isset($_GET['delete_prod'])) {
-    $prodId = (int)$_GET['delete_prod'];
-    $db->executeQuery("DELETE FROM production_data WHERE id = ?", [$prodId]);
-    echo "alert('Данные успешно удалены!');";
-    // Redirect to remove the delete_prod parameter from URL to prevent repeated deletion and stay on the production tab
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=production';";
-}
-
-if (isset($_GET['delete_raw_cost'])) {
-    $costId = (int)$_GET['delete_raw_cost'];
-    $db->executeQuery("DELETE FROM raw_material_costs WHERE id = ?", [$costId]);
-    echo "alert('Затрата успешно удалена!');";
-    // Redirect to remove the delete_raw_cost parameter from URL to prevent repeated deletion and stay on the costs tab
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=costs';";
-}
-
-if (isset($_GET['delete_energy_cost'])) {
-    $costId = (int)$_GET['delete_energy_cost'];
-    $db->executeQuery("DELETE FROM energy_costs WHERE id = ?", [$costId]);
-    echo "alert('Затрата успешно удалена!');";
-    // Redirect to remove the delete_energy_cost parameter from URL to prevent repeated deletion and stay on the costs tab
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=costs';";
-}
-
-if ($_POST['action'] ?? '' == 'add_cost') {
-    $period = $_POST['period'] . '-01';
-    $costType = $_POST['cost_type'];
-    $totalCost = $_POST['cost_per_unit'] * $_POST['quantity_used'];
-    
-    switch ($costType) {
-        case 'raw_material':
-            $data = [
-                'project_id' => $projectId,
-                'period' => $period,
-                'material_type' => $_POST['material_type'],
-                'cost_per_unit' => $_POST['cost_per_unit'],
-                'quantity_used' => $_POST['quantity_used'],
-                'total_cost' => $totalCost
-            ];
-            $db->insert('raw_material_costs', $data);
-            break;
-            
-        case 'energy':
-            $data = [
-                'project_id' => $projectId,
-                'period' => $period,
-                'energy_type' => $_POST['energy_type'],
-                'cost_per_unit' => $_POST['cost_per_unit'],
-                'quantity_used' => $_POST['quantity_used'],
-                'total_cost' => $totalCost
-            ];
-            $db->insert('energy_costs', $data);
-            break;
+    if ($action === 'add_production') {
+        $period = $_POST['period'] . '-01'; // Convert month to first day of month
+        $data = [
+            'project_id' => $projectId,
+            'period' => $period,
+            'product_type' => $_POST['product_type'],
+            'quantity' => $_POST['quantity'],
+            'unit' => $_POST['unit'],
+            'revenue' => $_POST['revenue'],
+            'variable_costs' => $_POST['variable_costs'],
+            'fixed_costs' => $_POST['fixed_costs']
+        ];
+        
+        $db->insert('production_data', $data);
+        echo "alert('Производственные данные успешно добавлены!');";
+        // Redirect to prevent re-submission and stay on the production tab
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=production';";
     }
-    
-    echo "alert('Затраты успешно добавлены!');";
-    // Redirect to prevent re-submission and stay on the costs tab
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=costs';";
+    elseif ($action === 'add_cost') {
+        $period = $_POST['period'] . '-01';
+        $costType = $_POST['cost_type'];
+        $totalCost = $_POST['cost_per_unit'] * $_POST['quantity_used'];
+        
+        switch ($costType) {
+            case 'raw_material':
+                $data = [
+                    'project_id' => $projectId,
+                    'period' => $period,
+                    'material_type' => $_POST['material_type'],
+                    'cost_per_unit' => $_POST['cost_per_unit'],
+                    'quantity_used' => $_POST['quantity_used'],
+                    'total_cost' => $totalCost
+                ];
+                $db->insert('raw_material_costs', $data);
+                break;
+                
+            case 'energy':
+                $data = [
+                    'project_id' => $projectId,
+                    'period' => $period,
+                    'energy_type' => $_POST['energy_type'],
+                    'cost_per_unit' => $_POST['cost_per_unit'],
+                    'quantity_used' => $_POST['quantity_used'],
+                    'total_cost' => $totalCost
+                ];
+                $db->insert('energy_costs', $data);
+                break;
+        }
+        
+        echo "alert('Затраты успешно добавлены!');";
+        // Redirect to prevent re-submission and stay on the costs tab
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=costs';";
+    }
+    elseif ($action === 'add_price') {
+        $period = $_POST['period'] . '-01';
+        $data = [
+            'project_id' => $projectId,
+            'period' => $period,
+            'product_type' => $_POST['product_type'],
+            'size_spec' => $_POST['size_spec'],
+            'precision_class' => $_POST['precision_class'],
+            'region' => $_POST['region'],
+            'price_per_unit' => $_POST['price_per_unit']
+        ];
+        
+        $db->insert('product_prices', $data);
+        echo "alert('Цена успешно добавлена!');";
+        // Redirect to prevent re-submission and stay on the prices tab
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=prices';";
+    }
+    elseif ($action === 'add_investment') {
+        $data = [
+            'project_id' => $projectId,
+            'investment_type' => $_POST['investment_type'],
+            'description' => $_POST['description'],
+            'amount' => $_POST['amount'],
+            'investment_date' => $_POST['investment_date']
+        ];
+        
+        $db->insert('investment_data', $data);
+        echo "alert('Инвестиция успешно добавлена!');";
+        // Redirect to prevent re-submission and stay on the investments tab
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=investments';";
+    }
+    elseif ($action === 'import_excel') {
+        echo "alert('Функция импорта Excel временно недоступна в этой версии. Для полной реализации потребуется библиотека для работы с Excel файлами.');";
+        // Redirect to prevent re-submission and stay on the import tab
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=import';";
+    }
 }
-
-if ($_POST['action'] ?? '' == 'add_price') {
-    $period = $_POST['period'] . '-01';
-    $data = [
-        'project_id' => $projectId,
-        'period' => $period,
-        'product_type' => $_POST['product_type'],
-        'size_spec' => $_POST['size_spec'],
-        'precision_class' => $_POST['precision_class'],
-        'region' => $_POST['region'],
-        'price_per_unit' => $_POST['price_per_unit']
-    ];
-    
-    $db->insert('product_prices', $data);
-    echo "alert('Цена успешно добавлена!');";
-    // Redirect to prevent re-submission and stay on the prices tab
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=prices';";
-}
-
-if (isset($_GET['delete_price'])) {
-    $priceId = (int)$_GET['delete_price'];
-    $db->executeQuery("DELETE FROM product_prices WHERE id = ?", [$priceId]);
-    // Redirect to remove the delete_price parameter from URL to prevent repeated deletion and stay on the prices tab
-    echo "alert('Цена успешно удалена!');";
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=prices';";
-}
-
-if (isset($_GET['delete_investment'])) {
-    $investmentId = (int)$_GET['delete_investment'];
-    $db->executeQuery("DELETE FROM investment_data WHERE id = ?", [$investmentId]);
-    // Redirect to remove the delete_investment parameter from URL to prevent repeated deletion and stay on the investments tab
-    echo "alert('Инвестиция успешно удалена!');";
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=investments';";
-}
-
-if ($_POST['action'] ?? '' == 'add_investment') {
-    $data = [
-        'project_id' => $projectId,
-        'investment_type' => $_POST['investment_type'],
-        'description' => $_POST['description'],
-        'amount' => $_POST['amount'],
-        'investment_date' => $_POST['investment_date']
-    ];
-    
-    $db->insert('investment_data', $data);
-    echo "alert('Инвестиция успешно добавлена!');";
-    // Redirect to prevent re-submission and stay on the investments tab
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=investments';";
-}
-
-if ($_POST['action'] ?? '' == 'import_excel') {
-    echo "alert('Функция импорта Excel временно недоступна в этой версии. Для полной реализации потребуется библиотека для работы с Excel файлами.');";
-    // Redirect to prevent re-submission and stay on the import tab
-    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=import';";
+// Handle GET requests for deletion
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (isset($_GET['delete_prod'])) {
+        $prodId = (int)$_GET['delete_prod'];
+        $db->executeQuery("DELETE FROM production_data WHERE id = ?", [$prodId]);
+        echo "alert('Данные успешно удалены!');";
+        // Redirect to remove the delete_prod parameter from URL to prevent repeated deletion and stay on the production tab
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=production';";
+    }
+    elseif (isset($_GET['delete_raw_cost'])) {
+        $costId = (int)$_GET['delete_raw_cost'];
+        $db->executeQuery("DELETE FROM raw_material_costs WHERE id = ?", [$costId]);
+        echo "alert('Затрата успешно удалена!');";
+        // Redirect to remove the delete_raw_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=costs';";
+    }
+    elseif (isset($_GET['delete_energy_cost'])) {
+        $costId = (int)$_GET['delete_energy_cost'];
+        $db->executeQuery("DELETE FROM energy_costs WHERE id = ?", [$costId]);
+        echo "alert('Затрата успешно удалена!');";
+        // Redirect to remove the delete_energy_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=costs';";
+    }
+    elseif (isset($_GET['delete_price'])) {
+        $priceId = (int)$_GET['delete_price'];
+        $db->executeQuery("DELETE FROM product_prices WHERE id = ?", [$priceId]);
+        // Redirect to remove the delete_price parameter from URL to prevent repeated deletion and stay on the prices tab
+        echo "alert('Цена успешно удалена!');";
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=prices';";
+    }
+    elseif (isset($_GET['delete_investment'])) {
+        $investmentId = (int)$_GET['delete_investment'];
+        $db->executeQuery("DELETE FROM investment_data WHERE id = ?", [$investmentId]);
+        // Redirect to remove the delete_investment parameter from URL to prevent repeated deletion and stay on the investments tab
+        echo "alert('Инвестиция успешно удалена!');";
+        echo "window.location.href = '?action=data-input&project_id=$projectId&tab=investments';";
+    }
 }
 ?>
 </script>
