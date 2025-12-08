@@ -237,6 +237,32 @@
                 
                 <button type="submit" class="btn-primary">Добавить цену</button>
             </form>
+            
+            <!-- Display existing prices -->
+            <h4>Существующие цены</h4>
+            <?php
+            $priceData = $db->fetchAll("SELECT * FROM product_prices WHERE project_id = ? ORDER BY period DESC", [$projectId]);
+            if (!empty($priceData)) {
+                echo "<table class='data-table'>";
+                echo "<thead><tr><th>Период</th><th>Тип продукции</th><th>Типоразмер</th><th>Класс точности</th><th>Регион</th><th>Цена за единицу</th><th>Действия</th></tr></thead>";
+                echo "<tbody>";
+                foreach ($priceData as $data) {
+                    echo "<tr>";
+                    echo "<td>" . date('Y-m', strtotime($data['period'])) . "</td>";
+                    echo "<td>" . htmlspecialchars($data['product_type']) . "</td>";
+                    echo "<td>" . htmlspecialchars($data['size_spec']) . "</td>";
+                    echo "<td>" . htmlspecialchars($data['precision_class']) . "</td>";
+                    echo "<td>" . htmlspecialchars($data['region']) . "</td>";
+                    echo "<td>" . number_format($data['price_per_unit'], 2, '.', ' ') . "</td>";
+                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_price=" . $data['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
+                    echo "</tr>";
+                }
+                echo "</tbody>";
+                echo "</table>";
+            } else {
+                echo "<p>Нет введенных цен на продукцию</p>";
+            }
+            ?>
         </div>
         
         <!-- Investments Tab -->
@@ -412,6 +438,13 @@ if ($_POST['action'] ?? '' == 'add_price') {
     
     $db->insert('product_prices', $data);
     echo "alert('Цена успешно добавлена!');";
+}
+
+if (isset($_GET['delete_price'])) {
+    $priceId = (int)$_GET['delete_price'];
+    $db->executeQuery("DELETE FROM product_prices WHERE id = ?", [$priceId]);
+    echo "alert('Цена успешно удалена!');";
+    echo "location.reload();";
 }
 
 if ($_POST['action'] ?? '' == 'add_investment') {
