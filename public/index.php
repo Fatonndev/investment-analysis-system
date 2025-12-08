@@ -1,3 +1,25 @@
+<?php
+// Check database connection
+require_once '../autoload.php';
+
+use App\Config\Database;
+
+try {
+    $db = new Database();
+    $connection = $db->connect();
+    
+    // Test the connection
+    if ($connection) {
+        $connected = true;
+    } else {
+        $connected = false;
+    }
+} catch (Exception $e) {
+    $connected = false;
+    $error_message = $e->getMessage();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -38,9 +60,32 @@
             height: 400px;
             margin-top: 2rem;
         }
+        .db-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
+    <?php if (!$connected): ?>
+    <div class="db-error">
+        <h4>Ошибка подключения к базе данных</h4>
+        <p>Приложение не может подключиться к базе данных. Пожалуйста, проверьте:</p>
+        <ul>
+            <li>Запущен ли сервер MySQL</li>
+            <li>Правильность настроек подключения в файле <code>src/Config/Database.php</code></li>
+            <li>Существует ли база данных и таблицы</li>
+            <li>Правильно ли импортирован файл <code>database_schema.sql</code></li>
+        </ul>
+        <?php if (isset($error_message)): ?>
+            <p><strong>Техническая информация:</strong> <?= htmlspecialchars($error_message) ?></p>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
     <div class="header">
         <div class="container">
             <h1 class="text-center">Система анализа и прогнозирования рентабельности инвестиций</h1>
