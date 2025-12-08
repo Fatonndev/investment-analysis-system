@@ -50,7 +50,7 @@
 
             switch ($costType) {
                 case 'raw_material':
-                    $totalCost = $_POST['cost_per_unit'] * $_POST['quantity_used'];
+                    $totalCost = (float)$_POST['cost_per_unit'] * (float)$_POST['quantity_used'];
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
@@ -63,7 +63,7 @@
                     break;
 
                 case 'energy':
-                    $totalCost = $_POST['cost_per_unit'] * $_POST['quantity_used'];
+                    $totalCost = (float)$_POST['cost_per_unit'] * (float)$_POST['quantity_used'];
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
@@ -86,7 +86,7 @@
                     break;
 
                 case 'labor':
-                    $totalCost = $_POST['salary_cost'] + $_POST['benefits'];
+                    $totalCost = (float)$_POST['salary_cost'] + (float)$_POST['benefits'];
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
