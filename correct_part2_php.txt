@@ -1,0 +1,190 @@
+// Handle form submissions
+<?php
+// Ensure we only process POST requests for form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    
+    if ($action === 'add_production') {
+        $period = $_POST['period'] . '-01'; // Convert month to first day of month
+        $data = [
+            'project_id' => $projectId,
+            'period' => $period,
+            'product_type' => $_POST['product_type'],
+            'quantity' => $_POST['quantity'],
+            'unit' => $_POST['unit'],
+            'revenue' => $_POST['revenue'],
+            'variable_costs' => $_POST['variable_costs'],
+            'fixed_costs' => $_POST['fixed_costs']
+        ];
+        
+        $db->insert('production_data', $data);
+        // Redirect to prevent re-submission and stay on the production tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=production");
+        exit();
+    }
+    elseif ($action === 'add_cost') {
+        $period = $_POST['period'] . '-01';
+        $costType = $_POST['cost_type'];
+        
+        switch ($costType) {
+            case 'raw_material':
+                $totalCost = $_POST['cost_per_unit'] * $_POST['quantity_used'];
+                $data = [
+                    'project_id' => $projectId,
+                    'period' => $period,
+                    'material_type' => $_POST['material_type'],
+                    'cost_per_unit' => $_POST['cost_per_unit'],
+                    'quantity_used' => $_POST['quantity_used'],
+                    'total_cost' => $totalCost
+                ];
+                $db->insert('raw_material_costs', $data);
+                break;
+                
+            case 'energy':
+                $totalCost = $_POST['cost_per_unit'] * $_POST['quantity_used'];
+                $data = [
+                    'project_id' => $projectId,
+                    'period' => $period,
+                    'energy_type' => $_POST['energy_type'],
+                    'cost_per_unit' => $_POST['cost_per_unit'],
+                    'quantity_used' => $_POST['quantity_used'],
+                    'total_cost' => $totalCost
+                ];
+                $db->insert('energy_costs', $data);
+                break;
+                
+            case 'logistics':
+                $data = [
+                    'project_id' => $projectId,
+                    'period' => $period,
+                    'route' => $_POST['route'],
+                    'cost' => $_POST['cost']
+                ];
+                $db->insert('logistics_costs', $data);
+                break;
+                
+            case 'labor':
+                $totalCost = $_POST['salary_cost'] + $_POST['benefits'];
+                $data = [
+                    'project_id' => $projectId,
+                    'period' => $period,
+                    'department' => $_POST['department'],
+                    'salary_cost' => $_POST['salary_cost'],
+                    'benefits' => $_POST['benefits'],
+                    'total_cost' => $totalCost
+                ];
+                $db->insert('labor_costs', $data);
+                break;
+                
+            case 'depreciation':
+                $data = [
+                    'project_id' => $projectId,
+                    'period' => $period,
+                    'asset_name' => $_POST['asset_name'],
+                    'depreciation_amount' => $_POST['depreciation_amount']
+                ];
+                $db->insert('depreciation_costs', $data);
+                break;
+        }
+        
+        // Redirect to prevent re-submission and stay on the costs tab
+        header("Location: ?action=data-input&project_id=" . $projectId . "&tab=costs");
+        exit();
+    }
+    elseif ($action === 'add_price') {
+        $period = $_POST['period'] . '-01';
+        $data = [
+            'project_id' => $projectId,
+            'period' => $period,
+            'product_type' => $_POST['product_type'],
+            'size_spec' => $_POST['size_spec'],
+            'precision_class' => $_POST['precision_class'],
+            'region' => $_POST['region'],
+            'price_per_unit' => $_POST['price_per_unit']
+        ];
+        
+        $db->insert('product_prices', $data);
+        // Redirect to prevent re-submission and stay on the prices tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=prices");
+        exit();
+    }
+    elseif ($action === 'add_investment') {
+        $data = [
+            'project_id' => $projectId,
+            'investment_type' => $_POST['investment_type'],
+            'description' => $_POST['description'],
+            'amount' => $_POST['amount'],
+            'investment_date' => $_POST['investment_date']
+        ];
+        
+        $db->insert('investment_data', $data);
+        // Redirect to prevent re-submission and stay on the investments tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=investments");
+        exit();
+    }
+    elseif ($action === 'import_excel') {
+        // Redirect to prevent re-submission and stay on the import tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=import");
+        exit();
+    }
+}
+// Handle GET requests for deletion
+elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (isset($_GET['delete_prod'])) {
+        $prodId = (int)$_GET['delete_prod'];
+        $db->executeQuery("DELETE FROM production_data WHERE id = ?", [$prodId]);
+        // Redirect to remove the delete_prod parameter from URL to prevent repeated deletion and stay on the production tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=production");
+        exit();
+    }
+    elseif (isset($_GET['delete_raw_cost'])) {
+        $costId = (int)$_GET['delete_raw_cost'];
+        $db->executeQuery("DELETE FROM raw_material_costs WHERE id = ?", [$costId]);
+        // Redirect to remove the delete_raw_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=costs");
+        exit();
+    }
+    elseif (isset($_GET['delete_energy_cost'])) {
+        $costId = (int)$_GET['delete_energy_cost'];
+        $db->executeQuery("DELETE FROM energy_costs WHERE id = ?", [$costId]);
+        // Redirect to remove the delete_energy_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=costs");
+        exit();
+    }
+    elseif (isset($_GET['delete_logistics_cost'])) {
+        $costId = (int)$_GET['delete_logistics_cost'];
+        $db->executeQuery("DELETE FROM logistics_costs WHERE id = ?", [$costId]);
+        // Redirect to remove the delete_logistics_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=costs");
+        exit();
+    }
+    elseif (isset($_GET['delete_labor_cost'])) {
+        $costId = (int)$_GET['delete_labor_cost'];
+        $db->executeQuery("DELETE FROM labor_costs WHERE id = ?", [$costId]);
+        // Redirect to remove the delete_labor_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=costs");
+        exit();
+    }
+    elseif (isset($_GET['delete_depreciation_cost'])) {
+        $costId = (int)$_GET['delete_depreciation_cost'];
+        $db->executeQuery("DELETE FROM depreciation_costs WHERE id = ?", [$costId]);
+        // Redirect to remove the delete_depreciation_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=costs");
+        exit();
+    }
+    elseif (isset($_GET['delete_price'])) {
+        $priceId = (int)$_GET['delete_price'];
+        $db->executeQuery("DELETE FROM product_prices WHERE id = ?", [$priceId]);
+        // Redirect to remove the delete_price parameter from URL to prevent repeated deletion and stay on the prices tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=prices");
+        exit();
+    }
+    elseif (isset($_GET['delete_investment'])) {
+        $investmentId = (int)$_GET['delete_investment'];
+        $db->executeQuery("DELETE FROM investment_data WHERE id = ?", [$investmentId]);
+        // Redirect to remove the delete_investment parameter from URL to prevent repeated deletion and stay on the investments tab
+        header("Location: ?action=data-input&project_id=$projectId&tab=investments");
+        exit();
+    }
+}
+?>
