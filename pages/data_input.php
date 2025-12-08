@@ -64,26 +64,25 @@
                     break;
 
                 case 'energy':
-                    $totalCost = (float)$_POST['cost_per_unit'] * (float)$_POST['quantity_used'];
+                    $totalCost = (float)$_POST['total_cost'];
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
                         'cost_type' => 'energy',
                         'energy_type' => $_POST['energy_type'],
-                        'cost_per_unit' => (float)$_POST['cost_per_unit'],
-                        'quantity_used' => (float)$_POST['quantity_used'],
                         'total_cost' => $totalCost
                     ];
                     $db->insert('operational_costs', $data);
                     break;
 
                 case 'logistics':
+                    $totalCost = (float)$_POST['total_cost'];
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
                         'cost_type' => 'logistics',
                         'route' => $_POST['route'],
-                        'cost' => (float)$_POST['cost']
+                        'total_cost' => $totalCost
                     ];
                     $db->insert('operational_costs', $data);
                     break;
@@ -337,12 +336,8 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="cost_per_unit_energy">Стоимость за единицу (руб.):</label>
-                            <input type="number" id="cost_per_unit_energy" name="cost_per_unit" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label for="quantity_used_energy">Количество использовано:</label>
-                            <input type="number" id="quantity_used_energy" name="quantity_used" step="0.01">
+                            <label for="total_energy_cost">Общая стоимость (руб.):</label>
+                            <input type="number" id="total_energy_cost" name="total_cost" step="0.01" required>
                         </div>
                     </div>
                 </div>
@@ -354,8 +349,8 @@
                             <input type="text" id="logistics_route" name="route" placeholder="например: Москва-Санкт-Петербург">
                         </div>
                         <div class="form-group">
-                            <label for="logistics_cost">Стоимость перевозки (руб.):</label>
-                            <input type="number" id="logistics_cost" name="cost" step="0.01">
+                            <label for="logistics_total_cost">Общая стоимость затрат (руб.):</label>
+                            <input type="number" id="logistics_total_cost" name="total_cost" step="0.01" required>
                         </div>
                     </div>
                 </div>
@@ -368,11 +363,11 @@
                         </div>
                         <div class="form-group">
                             <label for="salary_cost">ФОТ (руб.):</label>
-                            <input type="number" id="salary_cost" name="salary_cost" step="0.01">
+                            <input type="number" id="salary_cost" name="salary_cost" step="0.01" required>
                         </div>
                         <div class="form-group">
                             <label for="benefits">Начисления (руб.):</label>
-                            <input type="number" id="benefits" name="benefits" step="0.01">
+                            <input type="number" id="benefits" name="benefits" step="0.01" required>
                         </div>
                     </div>
                 </div>
@@ -385,7 +380,7 @@
                         </div>
                         <div class="form-group">
                             <label for="depreciation_amount">Сумма амортизации (руб.):</label>
-                            <input type="number" id="depreciation_amount" name="depreciation_amount" step="0.01">
+                            <input type="number" id="depreciation_amount" name="depreciation_amount" step="0.01" required>
                         </div>
                     </div>
                 </div>
@@ -419,12 +414,12 @@
                             echo "<td>Энергия</td>";
                             echo "<td>" . htmlspecialchars($cost['energy_type'] ?? '') . "</td>";
                             echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
-                            echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . ", Кол-во: " . $cost['quantity_used'] . "</td>";
+                            echo "<td>-</td>";
                             break;
                         case 'logistics':
                             echo "<td>Логистика</td>";
                             echo "<td>" . htmlspecialchars($cost['route'] ?? '') . "</td>";
-                            echo "<td>" . number_format($cost['cost'], 2, '.', ' ') . "</td>";
+                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
                             echo "<td>-</td>";
                             break;
                         case 'labor':
