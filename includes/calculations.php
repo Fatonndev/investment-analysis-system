@@ -337,14 +337,14 @@ class InvestmentAnalysis {
         
         foreach ($financialData as $row) {
             $revenue = floatval($row['total_revenue']);
-            $costs = floatval($row['total_costs']);
-            $profit = $revenue - $costs;
+            $periodCosts = floatval($row['total_costs']);
+            $profit = $revenue - $periodCosts;
             
             $cashFlows[] = $profit;
             $totalRevenue += $revenue;
-            $totalCosts += $costs;
+            $totalCosts += $periodCosts;
             $revenues[] = $revenue;
-            $costs[] = $costs;
+            $costs[] = $periodCosts;
         }
         
         $totalProfit = $totalRevenue - $totalCosts;
