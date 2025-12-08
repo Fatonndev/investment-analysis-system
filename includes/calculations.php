@@ -328,7 +328,7 @@ class InvestmentAnalysis {
         $totalInvestment = $this->getProjectInvestments($projectId);
         
         if (empty($financialData)) {
-            return ['error' => 'No financial data available for this project'];
+            return ['error' => 'Не хватает данных для этого проекта'];
         }
         
         // Prepare cash flows
