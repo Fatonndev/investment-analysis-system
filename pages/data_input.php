@@ -443,8 +443,9 @@ if ($_POST['action'] ?? '' == 'add_price') {
 if (isset($_GET['delete_price'])) {
     $priceId = (int)$_GET['delete_price'];
     $db->executeQuery("DELETE FROM product_prices WHERE id = ?", [$priceId]);
+    // Redirect to remove the delete_price parameter from URL to prevent repeated deletion
     echo "alert('Цена успешно удалена!');";
-    echo "location.reload();";
+    echo "window.location.href = window.location.href.replace(/&delete_price=\\d+/, '');";
 }
 
 if ($_POST['action'] ?? '' == 'add_investment') {
