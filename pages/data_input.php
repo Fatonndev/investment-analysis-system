@@ -679,7 +679,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Cost type selection functionality
-    function toggleCostFields() {
+    window.toggleCostFields = function() {
         const costType = document.getElementById("cost_type").value;
 
         // Hide all cost type fields and disable their inputs
@@ -753,6 +753,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+    };
 
     // Set initial state
     toggleCostFields();
