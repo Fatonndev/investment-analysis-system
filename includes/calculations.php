@@ -289,7 +289,7 @@ class InvestmentAnalysis {
     public function getProjectFinancialData($projectId) {
         $sql = "
             SELECT 
-                p.period,
+                pd.period,
                 SUM(pd.revenue) as total_revenue,
                 SUM(pd.variable_costs + pd.fixed_costs) as total_costs,
                 SUM(rmc.total_cost) as raw_material_costs,
@@ -304,8 +304,8 @@ class InvestmentAnalysis {
             LEFT JOIN labor_costs labc ON pd.project_id = labc.project_id AND pd.period = labc.period
             LEFT JOIN depreciation_costs dc ON pd.project_id = dc.project_id AND pd.period = dc.period
             WHERE pd.project_id = ?
-            GROUP BY p.period
-            ORDER BY p.period
+            GROUP BY pd.period
+            ORDER BY pd.period
         ";
         
         return $this->db->fetchAll($sql, [$projectId]);
