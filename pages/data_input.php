@@ -411,31 +411,31 @@
                     switch ($cost['cost_type']) {
                         case 'raw_material':
                             echo "<td>Сырье</td>";
-                            echo "<td>" . htmlspecialchars($cost['material_type']) . "</td>";
+                            echo "<td>" . htmlspecialchars($cost['material_type'] ?? '') . "</td>";
                             echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
                             echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . ", Кол-во: " . $cost['quantity_used'] . "</td>";
                             break;
                         case 'energy':
                             echo "<td>Энергия</td>";
-                            echo "<td>" . htmlspecialchars($cost['energy_type']) . "</td>";
+                            echo "<td>" . htmlspecialchars($cost['energy_type'] ?? '') . "</td>";
                             echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
                             echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . ", Кол-во: " . $cost['quantity_used'] . "</td>";
                             break;
                         case 'logistics':
                             echo "<td>Логистика</td>";
-                            echo "<td>" . htmlspecialchars($cost['route']) . "</td>";
+                            echo "<td>" . htmlspecialchars($cost['route'] ?? '') . "</td>";
                             echo "<td>" . number_format($cost['cost'], 2, '.', ' ') . "</td>";
                             echo "<td>-</td>";
                             break;
                         case 'labor':
                             echo "<td>Заработная плата</td>";
-                            echo "<td>" . htmlspecialchars($cost['department']) . "</td>";
+                            echo "<td>" . htmlspecialchars($cost['department'] ?? '') . "</td>";
                             echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
                             echo "<td>ФОТ: " . number_format($cost['salary_cost'], 2, '.', ' ') . ", Начисления: " . number_format($cost['benefits'], 2, '.', ' ') . "</td>";
                             break;
                         case 'depreciation':
                             echo "<td>Амортизация</td>";
-                            echo "<td>" . htmlspecialchars($cost['asset_name']) . "</td>";
+                            echo "<td>" . htmlspecialchars($cost['asset_name'] ?? '') . "</td>";
                             echo "<td>" . number_format($cost['depreciation_amount'], 2, '.', ' ') . "</td>";
                             echo "<td>-</td>";
                             break;
