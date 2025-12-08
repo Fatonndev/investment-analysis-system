@@ -183,6 +183,48 @@
                 
                 <button type="submit" class="btn-primary">Добавить затраты</button>
             </form>
+            
+            <!-- Display existing costs data -->
+            <h4>Существующие данные о затратах</h4>
+            <?php
+            $rawMaterialCosts = $db->fetchAll("SELECT * FROM raw_material_costs WHERE project_id = ? ORDER BY period DESC", [$projectId]);
+            $energyCosts = $db->fetchAll("SELECT * FROM energy_costs WHERE project_id = ? ORDER BY period DESC", [$projectId]);
+            
+            if (!empty($rawMaterialCosts) || !empty($energyCosts)) {
+                echo "<table class='data-table'>";
+                echo "<thead><tr><th>Период</th><th>Тип затрат</th><th>Тип материала/энергии</th><th>Стоимость за ед.</th><th>Количество</th><th>Общая стоимость</th><th>Действия</th></tr></thead>";
+                echo "<tbody>";
+                
+                foreach ($rawMaterialCosts as $cost) {
+                    echo "<tr>";
+                    echo "<td>" . date('Y-m', strtotime($cost['period'])) . "</td>";
+                    echo "<td>Сырье</td>";
+                    echo "<td>" . htmlspecialchars($cost['material_type']) . "</td>";
+                    echo "<td>" . number_format($cost['cost_per_unit'], 2, '.', ' ') . "</td>";
+                    echo "<td>" . $cost['quantity_used'] . "</td>";
+                    echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
+                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_raw_cost=" . $cost['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
+                    echo "</tr>";
+                }
+                
+                foreach ($energyCosts as $cost) {
+                    echo "<tr>";
+                    echo "<td>" . date('Y-m', strtotime($cost['period'])) . "</td>";
+                    echo "<td>Энергия</td>";
+                    echo "<td>" . htmlspecialchars($cost['energy_type']) . "</td>";
+                    echo "<td>" . number_format($cost['cost_per_unit'], 2, '.', ' ') . "</td>";
+                    echo "<td>" . $cost['quantity_used'] . "</td>";
+                    echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
+                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_energy_cost=" . $cost['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
+                    echo "</tr>";
+                }
+                
+                echo "</tbody>";
+                echo "</table>";
+            } else {
+                echo "<p>Нет введенных данных о затратах</p>";
+            }
+            ?>
         </div>
         
         <!-- Prices Tab -->
@@ -299,6 +341,30 @@
                 
                 <button type="submit" class="btn-primary">Добавить инвестицию</button>
             </form>
+            
+            <!-- Display existing investments data -->
+            <h4>Существующие инвестиционные вложения</h4>
+            <?php
+            $investmentData = $db->fetchAll("SELECT * FROM investment_data WHERE project_id = ? ORDER BY investment_date DESC", [$projectId]);
+            if (!empty($investmentData)) {
+                echo "<table class='data-table'>";
+                echo "<thead><tr><th>Тип инвестиции</th><th>Описание</th><th>Сумма</th><th>Дата вложения</th><th>Действия</th></tr></thead>";
+                echo "<tbody>";
+                foreach ($investmentData as $data) {
+                    echo "<tr>";
+                    echo "<td>" . htmlspecialchars($data['investment_type']) . "</td>";
+                    echo "<td>" . htmlspecialchars($data['description']) . "</td>";
+                    echo "<td>" . number_format($data['amount'], 2, '.', ' ') . "</td>";
+                    echo "<td>" . $data['investment_date'] . "</td>";
+                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_investment=" . $data['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
+                    echo "</tr>";
+                }
+                echo "</tbody>";
+                echo "</table>";
+            } else {
+                echo "<p>Нет введенных инвестиционных вложений</p>";
+            }
+            ?>
         </div>
         
         <!-- Import Data Tab -->
@@ -412,6 +478,22 @@ if (isset($_GET['delete_prod'])) {
     echo "window.location.href = '?action=data-input&project_id=$projectId&tab=production';";
 }
 
+if (isset($_GET['delete_raw_cost'])) {
+    $costId = (int)$_GET['delete_raw_cost'];
+    $db->executeQuery("DELETE FROM raw_material_costs WHERE id = ?", [$costId]);
+    echo "alert('Затрата успешно удалена!');";
+    // Redirect to remove the delete_raw_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=costs';";
+}
+
+if (isset($_GET['delete_energy_cost'])) {
+    $costId = (int)$_GET['delete_energy_cost'];
+    $db->executeQuery("DELETE FROM energy_costs WHERE id = ?", [$costId]);
+    echo "alert('Затрата успешно удалена!');";
+    // Redirect to remove the delete_energy_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=costs';";
+}
+
 if ($_POST['action'] ?? '' == 'add_cost') {
     $period = $_POST['period'] . '-01';
     $costType = $_POST['cost_type'];
@@ -472,6 +554,14 @@ if (isset($_GET['delete_price'])) {
     // Redirect to remove the delete_price parameter from URL to prevent repeated deletion and stay on the prices tab
     echo "alert('Цена успешно удалена!');";
     echo "window.location.href = '?action=data-input&project_id=$projectId&tab=prices';";
+}
+
+if (isset($_GET['delete_investment'])) {
+    $investmentId = (int)$_GET['delete_investment'];
+    $db->executeQuery("DELETE FROM investment_data WHERE id = ?", [$investmentId]);
+    // Redirect to remove the delete_investment parameter from URL to prevent repeated deletion and stay on the investments tab
+    echo "alert('Инвестиция успешно удалена!');";
+    echo "window.location.href = '?action=data-input&project_id=$projectId&tab=investments';";
 }
 
 if ($_POST['action'] ?? '' == 'add_investment') {
