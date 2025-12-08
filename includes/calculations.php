@@ -292,17 +292,13 @@ class InvestmentAnalysis {
                 pd.period,
                 SUM(pd.revenue) as total_revenue,
                 SUM(pd.variable_costs + pd.fixed_costs) as total_costs,
-                SUM(rmc.total_cost) as raw_material_costs,
-                SUM(ec.total_cost) as energy_costs,
-                SUM(lc.cost) as logistics_costs,
-                SUM(labc.total_cost) as labor_costs,
-                SUM(dc.depreciation_amount) as depreciation_costs
+                SUM(CASE WHEN oc.cost_type = 'raw_material' THEN oc.total_cost ELSE 0 END) as raw_material_costs,
+                SUM(CASE WHEN oc.cost_type = 'energy' THEN oc.total_cost ELSE 0 END) as energy_costs,
+                SUM(CASE WHEN oc.cost_type = 'logistics' THEN oc.cost ELSE 0 END) as logistics_costs,
+                SUM(CASE WHEN oc.cost_type = 'labor' THEN oc.total_cost ELSE 0 END) as labor_costs,
+                SUM(CASE WHEN oc.cost_type = 'depreciation' THEN oc.depreciation_amount ELSE 0 END) as depreciation_costs
             FROM production_data pd
-            LEFT JOIN raw_material_costs rmc ON pd.project_id = rmc.project_id AND pd.period = rmc.period
-            LEFT JOIN energy_costs ec ON pd.project_id = ec.project_id AND pd.period = ec.period
-            LEFT JOIN logistics_costs lc ON pd.project_id = lc.project_id AND pd.period = lc.period
-            LEFT JOIN labor_costs labc ON pd.project_id = labc.project_id AND pd.period = labc.period
-            LEFT JOIN depreciation_costs dc ON pd.project_id = dc.project_id AND pd.period = dc.period
+            LEFT JOIN operational_costs oc ON pd.project_id = oc.project_id AND pd.period = oc.period
             WHERE pd.project_id = ?
             GROUP BY pd.period
             ORDER BY pd.period

@@ -45,56 +45,27 @@ class Database {
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
             )",
             
-            "raw_material_costs" => "CREATE TABLE IF NOT EXISTS raw_material_costs (
+            "operational_costs" => "CREATE TABLE IF NOT EXISTS operational_costs (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 project_id INT,
                 period DATE,
+                cost_type ENUM('raw_material', 'energy', 'logistics', 'labor', 'depreciation') NOT NULL,
+                -- Common fields
+                cost DECIMAL(15,2),
+                total_cost DECIMAL(15,2),
+                -- Raw material specific fields
                 material_type VARCHAR(100),
                 cost_per_unit DECIMAL(10,2),
                 quantity_used DECIMAL(15,2),
-                total_cost DECIMAL(15,2),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-            )",
-            
-            "energy_costs" => "CREATE TABLE IF NOT EXISTS energy_costs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                project_id INT,
-                period DATE,
+                -- Energy specific fields
                 energy_type VARCHAR(100),
-                cost_per_unit DECIMAL(10,2),
-                quantity_used DECIMAL(15,2),
-                total_cost DECIMAL(15,2),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-            )",
-            
-            "logistics_costs" => "CREATE TABLE IF NOT EXISTS logistics_costs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                project_id INT,
-                period DATE,
+                -- Logistics specific fields
                 route VARCHAR(100),
-                cost DECIMAL(15,2),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-            )",
-            
-            "labor_costs" => "CREATE TABLE IF NOT EXISTS labor_costs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                project_id INT,
-                period DATE,
+                -- Labor specific fields
                 department VARCHAR(100),
                 salary_cost DECIMAL(15,2),
                 benefits DECIMAL(15,2),
-                total_cost DECIMAL(15,2),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-            )",
-            
-            "depreciation_costs" => "CREATE TABLE IF NOT EXISTS depreciation_costs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                project_id INT,
-                period DATE,
+                -- Depreciation specific fields
                 asset_name VARCHAR(100),
                 depreciation_amount DECIMAL(15,2),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

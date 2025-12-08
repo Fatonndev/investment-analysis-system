@@ -54,12 +54,13 @@
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
+                        'cost_type' => 'raw_material',
                         'material_type' => $_POST['material_type'],
                         'cost_per_unit' => (float)$_POST['cost_per_unit'],
                         'quantity_used' => (float)$_POST['quantity_used'],
                         'total_cost' => $totalCost
                     ];
-                    $db->insert('raw_material_costs', $data);
+                    $db->insert('operational_costs', $data);
                     break;
 
                 case 'energy':
@@ -67,22 +68,24 @@
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
+                        'cost_type' => 'energy',
                         'energy_type' => $_POST['energy_type'],
                         'cost_per_unit' => (float)$_POST['cost_per_unit'],
                         'quantity_used' => (float)$_POST['quantity_used'],
                         'total_cost' => $totalCost
                     ];
-                    $db->insert('energy_costs', $data);
+                    $db->insert('operational_costs', $data);
                     break;
 
                 case 'logistics':
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
+                        'cost_type' => 'logistics',
                         'route' => $_POST['route'],
                         'cost' => (float)$_POST['cost']
                     ];
-                    $db->insert('logistics_costs', $data);
+                    $db->insert('operational_costs', $data);
                     break;
 
                 case 'labor':
@@ -90,22 +93,24 @@
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
+                        'cost_type' => 'labor',
                         'department' => $_POST['department'],
                         'salary_cost' => (float)$_POST['salary_cost'],
                         'benefits' => (float)$_POST['benefits'],
                         'total_cost' => $totalCost
                     ];
-                    $db->insert('labor_costs', $data);
+                    $db->insert('operational_costs', $data);
                     break;
 
                 case 'depreciation':
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
+                        'cost_type' => 'depreciation',
                         'asset_name' => $_POST['asset_name'],
                         'depreciation_amount' => (float)$_POST['depreciation_amount']
                     ];
-                    $db->insert('depreciation_costs', $data);
+                    $db->insert('operational_costs', $data);
                     break;
             }
 
@@ -159,38 +164,10 @@
             header("Location: ?action=data-input&project_id=$projectId&tab=production");
             exit();
         }
-        elseif (isset($_GET['delete_raw_cost'])) {
-            $costId = (int)$_GET['delete_raw_cost'];
-            $db->executeQuery("DELETE FROM raw_material_costs WHERE id = ?", [$costId]);
-            // Redirect to remove the delete_raw_cost parameter from URL to prevent repeated deletion and stay on the costs tab
-            header("Location: ?action=data-input&project_id=$projectId&tab=costs");
-            exit();
-        }
-        elseif (isset($_GET['delete_energy_cost'])) {
-            $costId = (int)$_GET['delete_energy_cost'];
-            $db->executeQuery("DELETE FROM energy_costs WHERE id = ?", [$costId]);
-            // Redirect to remove the delete_energy_cost parameter from URL to prevent repeated deletion and stay on the costs tab
-            header("Location: ?action=data-input&project_id=$projectId&tab=costs");
-            exit();
-        }
-        elseif (isset($_GET['delete_logistics_cost'])) {
-            $costId = (int)$_GET['delete_logistics_cost'];
-            $db->executeQuery("DELETE FROM logistics_costs WHERE id = ?", [$costId]);
-            // Redirect to remove the delete_logistics_cost parameter from URL to prevent repeated deletion and stay on the costs tab
-            header("Location: ?action=data-input&project_id=$projectId&tab=costs");
-            exit();
-        }
-        elseif (isset($_GET['delete_labor_cost'])) {
-            $costId = (int)$_GET['delete_labor_cost'];
-            $db->executeQuery("DELETE FROM labor_costs WHERE id = ?", [$costId]);
-            // Redirect to remove the delete_labor_cost parameter from URL to prevent repeated deletion and stay on the costs tab
-            header("Location: ?action=data-input&project_id=$projectId&tab=costs");
-            exit();
-        }
-        elseif (isset($_GET['delete_depreciation_cost'])) {
-            $costId = (int)$_GET['delete_depreciation_cost'];
-            $db->executeQuery("DELETE FROM depreciation_costs WHERE id = ?", [$costId]);
-            // Redirect to remove the delete_depreciation_cost parameter from URL to prevent repeated deletion and stay on the costs tab
+        elseif (isset($_GET['delete_cost'])) {
+            $costId = (int)$_GET['delete_cost'];
+            $db->executeQuery("DELETE FROM operational_costs WHERE id = ?", [$costId]);
+            // Redirect to remove the delete_cost parameter from URL to prevent repeated deletion and stay on the costs tab
             header("Location: ?action=data-input&project_id=$projectId&tab=costs");
             exit();
         }
@@ -419,69 +396,52 @@
             <!-- Display existing costs data -->
             <h4>Существующие данные о затратах</h4>
             <?php
-            $rawMaterialCosts = $db->fetchAll("SELECT * FROM raw_material_costs WHERE project_id = ? ORDER BY period DESC", [$projectId]);
-            $energyCosts = $db->fetchAll("SELECT * FROM energy_costs WHERE project_id = ? ORDER BY period DESC", [$projectId]);
-            $logisticsCosts = $db->fetchAll("SELECT * FROM logistics_costs WHERE project_id = ? ORDER BY period DESC", [$projectId]);
-            $laborCosts = $db->fetchAll("SELECT * FROM labor_costs WHERE project_id = ? ORDER BY period DESC", [$projectId]);
-            $depreciationCosts = $db->fetchAll("SELECT * FROM depreciation_costs WHERE project_id = ? ORDER BY period DESC", [$projectId]);
+            $costsData = $db->fetchAll("SELECT * FROM operational_costs WHERE project_id = ? ORDER BY period DESC, cost_type", [$projectId]);
 
-            if (!empty($rawMaterialCosts) || !empty($energyCosts) || !empty($logisticsCosts) || !empty($laborCosts) || !empty($depreciationCosts)) {
+            if (!empty($costsData)) {
                 echo "<table class='data-table'>";
                 echo "<thead><tr><th>Период</th><th>Тип затрат</th><th>Детали</th><th>Стоимость</th><th>Доп.информация</th><th>Действия</th></tr></thead>";
                 echo "<tbody>";
 
-                foreach ($rawMaterialCosts as $cost) {
+                foreach ($costsData as $cost) {
                     echo "<tr>";
                     echo "<td>" . date('Y-m', strtotime($cost['period'])) . "</td>";
-                    echo "<td>Сырье</td>";
-                    echo "<td>" . htmlspecialchars($cost['material_type']) . "</td>";
-                    echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
-                    echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . ", Кол-во: " . $cost['quantity_used'] . "</td>";
-                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_raw_cost=" . $cost['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
-                    echo "</tr>";
-                }
-
-                foreach ($energyCosts as $cost) {
-                    echo "<tr>";
-                    echo "<td>" . date('Y-m', strtotime($cost['period'])) . "</td>";
-                    echo "<td>Энергия</td>";
-                    echo "<td>" . htmlspecialchars($cost['energy_type']) . "</td>";
-                    echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
-                    echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . ", Кол-во: " . $cost['quantity_used'] . "</td>";
-                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_energy_cost=" . $cost['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
-                    echo "</tr>";
-                }
-
-                foreach ($logisticsCosts as $cost) {
-                    echo "<tr>";
-                    echo "<td>" . date('Y-m', strtotime($cost['period'])) . "</td>";
-                    echo "<td>Логистика</td>";
-                    echo "<td>" . htmlspecialchars($cost['route']) . "</td>";
-                    echo "<td>" . number_format($cost['cost'], 2, '.', ' ') . "</td>";
-                    echo "<td>-</td>";
-                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_logistics_cost=" . $cost['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
-                    echo "</tr>";
-                }
-
-                foreach ($laborCosts as $cost) {
-                    echo "<tr>";
-                    echo "<td>" . date('Y-m', strtotime($cost['period'])) . "</td>";
-                    echo "<td>Заработная плата</td>";
-                    echo "<td>" . htmlspecialchars($cost['department']) . "</td>";
-                    echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
-                    echo "<td>ФОТ: " . number_format($cost['salary_cost'], 2, '.', ' ') . ", Начисления: " . number_format($cost['benefits'], 2, '.', ' ') . "</td>";
-                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_labor_cost=" . $cost['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
-                    echo "</tr>";
-                }
-
-                foreach ($depreciationCosts as $cost) {
-                    echo "<tr>";
-                    echo "<td>" . date('Y-m', strtotime($cost['period'])) . "</td>";
-                    echo "<td>Амортизация</td>";
-                    echo "<td>" . htmlspecialchars($cost['asset_name']) . "</td>";
-                    echo "<td>" . number_format($cost['depreciation_amount'], 2, '.', ' ') . "</td>";
-                    echo "<td>-</td>";
-                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_depreciation_cost=" . $cost['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
+                    
+                    // Определяем тип затрат и отображаем соответствующую информацию
+                    switch ($cost['cost_type']) {
+                        case 'raw_material':
+                            echo "<td>Сырье</td>";
+                            echo "<td>" . htmlspecialchars($cost['material_type']) . "</td>";
+                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
+                            echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . ", Кол-во: " . $cost['quantity_used'] . "</td>";
+                            break;
+                        case 'energy':
+                            echo "<td>Энергия</td>";
+                            echo "<td>" . htmlspecialchars($cost['energy_type']) . "</td>";
+                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
+                            echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . ", Кол-во: " . $cost['quantity_used'] . "</td>";
+                            break;
+                        case 'logistics':
+                            echo "<td>Логистика</td>";
+                            echo "<td>" . htmlspecialchars($cost['route']) . "</td>";
+                            echo "<td>" . number_format($cost['cost'], 2, '.', ' ') . "</td>";
+                            echo "<td>-</td>";
+                            break;
+                        case 'labor':
+                            echo "<td>Заработная плата</td>";
+                            echo "<td>" . htmlspecialchars($cost['department']) . "</td>";
+                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
+                            echo "<td>ФОТ: " . number_format($cost['salary_cost'], 2, '.', ' ') . ", Начисления: " . number_format($cost['benefits'], 2, '.', ' ') . "</td>";
+                            break;
+                        case 'depreciation':
+                            echo "<td>Амортизация</td>";
+                            echo "<td>" . htmlspecialchars($cost['asset_name']) . "</td>";
+                            echo "<td>" . number_format($cost['depreciation_amount'], 2, '.', ' ') . "</td>";
+                            echo "<td>-</td>";
+                            break;
+                    }
+                    
+                    echo "<td><a href='?action=data-input&project_id=$projectId&delete_cost=" . $cost['id'] . "' class='btn-small btn-danger' onclick='return confirm(\"Удалить запись?\")'>Удалить</a></td>";
                     echo "</tr>";
                 }
 
