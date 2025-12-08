@@ -1,0 +1,1 @@
+Nothing should be ignored based on the provided file changes. The added files (README.md, config.php, database.sql, finance_calculator.php, index.php) are all source/config files that should be tracked in version control.
