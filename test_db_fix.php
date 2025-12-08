@@ -34,7 +34,7 @@ try {
     }
 
     // Test the fixed query by checking if the required tables exist
-    $tables = ['production_data', 'raw_material_costs', 'energy_costs', 'logistics_costs', 'labor_costs', 'depreciation_costs'];
+    $tables = ['production_data', 'operational_costs'];
     
     foreach ($tables as $table) {
         $result = $db->fetchOne("SELECT COUNT(*) as count FROM information_schema.columns WHERE table_name = ? AND table_schema = ?", [$table, DB_NAME]);

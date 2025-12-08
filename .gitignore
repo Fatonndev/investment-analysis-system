@@ -1,1 +1,29 @@
-Nothing needs to be added to .gitignore since only a PHP source file was modified and no build artifacts, dependencies, or temporary files were detected in the changes.
+```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+
+# Dependencies
+vendor/
+*.lock
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Database migration backups
+*.sql.bak
+*.sql.backup
+```
