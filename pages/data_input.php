@@ -50,64 +50,77 @@
 
             switch ($costType) {
                 case 'raw_material':
-                    $totalCost = (float)$_POST['cost_per_unit'] * (float)$_POST['quantity_used'];
+                    $quantityUsed = (float)($_POST['quantity_used'] ?? 0);
+                    $costPerUnit = (float)($_POST['cost_per_unit'] ?? 0);
+                    $totalCost = $quantityUsed * $costPerUnit;
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
                         'cost_type' => 'raw_material',
                         'material_type' => $_POST['material_type'],
-                        'cost_per_unit' => (float)$_POST['cost_per_unit'],
-                        'quantity_used' => (float)$_POST['quantity_used'],
+                        'cost_per_unit' => $costPerUnit,
+                        'quantity_used' => $quantityUsed,
                         'total_cost' => $totalCost
                     ];
                     $db->insert('operational_costs', $data);
                     break;
 
                 case 'energy':
-                    $totalCost = (float)$_POST['total_cost'];
+                    $quantityUsed = (float)($_POST['quantity_used'] ?? 0);
+                    $costPerUnit = (float)($_POST['cost_per_unit'] ?? 0);
+                    $totalCost = $quantityUsed * $costPerUnit;
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
                         'cost_type' => 'energy',
                         'energy_type' => $_POST['energy_type'],
+                        'cost_per_unit' => $costPerUnit,
+                        'quantity_used' => $quantityUsed,
                         'total_cost' => $totalCost
                     ];
                     $db->insert('operational_costs', $data);
                     break;
 
                 case 'logistics':
-                    $totalCost = (float)$_POST['total_cost'];
+                    $quantityUsed = (float)($_POST['quantity_used'] ?? 0);
+                    $costPerUnit = (float)($_POST['cost_per_unit'] ?? 0);
+                    $totalCost = $quantityUsed * $costPerUnit;
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
                         'cost_type' => 'logistics',
                         'route' => $_POST['route'],
+                        'cost_per_unit' => $costPerUnit,
+                        'quantity_used' => $quantityUsed,
                         'total_cost' => $totalCost
                     ];
                     $db->insert('operational_costs', $data);
                     break;
 
                 case 'labor':
-                    $totalCost = (float)$_POST['salary_cost'] + (float)$_POST['benefits'];
+                    $salaryCost = (float)($_POST['salary_cost'] ?? 0);
+                    $benefits = (float)($_POST['benefits'] ?? 0);
+                    $totalCost = $salaryCost + $benefits;
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
                         'cost_type' => 'labor',
                         'department' => $_POST['department'],
-                        'salary_cost' => (float)$_POST['salary_cost'],
-                        'benefits' => (float)$_POST['benefits'],
+                        'salary_cost' => $salaryCost,
+                        'benefits' => $benefits,
                         'total_cost' => $totalCost
                     ];
                     $db->insert('operational_costs', $data);
                     break;
 
                 case 'depreciation':
+                    $depreciationAmount = (float)($_POST['depreciation_amount'] ?? 0);
                     $data = [
                         'project_id' => $projectId,
                         'period' => $period,
                         'cost_type' => 'depreciation',
                         'asset_name' => $_POST['asset_name'],
-                        'depreciation_amount' => (float)$_POST['depreciation_amount']
+                        'depreciation_amount' => $depreciationAmount
                     ];
                     $db->insert('operational_costs', $data);
                     break;
@@ -295,6 +308,7 @@
                     <div class="form-group">
                         <label for="cost_type">Тип затрат:</label>
                         <select id="cost_type" name="cost_type" required onchange="toggleCostFields()">
+                            <option value="">Выберите тип затрат</option>
                             <option value="raw_material">Сырье (сталь)</option>
                             <option value="energy">Энергоносители</option>
                             <option value="logistics">Логистика</option>
@@ -304,7 +318,8 @@
                     </div>
                 </div>
                 
-                <div id="raw-material-fields" class="cost-type-fields">
+                <!-- Raw Material Fields -->
+                <div id="raw-material-fields" class="cost-type-fields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="material_type">Тип материала:</label>
@@ -312,19 +327,21 @@
                                 <option value="Сталь">Сталь</option>
                                 <option value="Трубы-заготовки">Трубы-заготовки</option>
                                 <option value="Покрытия">Покрытия</option>
+                                <option value="Прочее">Прочее</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="cost_per_unit_raw">Стоимость за единицу (руб.):</label>
-                            <input type="number" id="cost_per_unit_raw" name="cost_per_unit" step="0.01" required>
+                            <label for="quantity_used_raw">Количество использовано:</label>
+                            <input type="number" id="quantity_used_raw" name="quantity_used" step="0.01" min="0" required>
                         </div>
                         <div class="form-group">
-                            <label for="quantity_used_raw">Количество использовано:</label>
-                            <input type="number" id="quantity_used_raw" name="quantity_used" step="0.01" required>
+                            <label for="cost_per_unit_raw">Стоимость за единицу (руб.):</label>
+                            <input type="number" id="cost_per_unit_raw" name="cost_per_unit" step="0.01" min="0" required>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Energy Fields -->
                 <div id="energy-fields" class="cost-type-fields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
@@ -333,15 +350,22 @@
                                 <option value="Электроэнергия">Электроэнергия</option>
                                 <option value="Газ">Газ</option>
                                 <option value="Пар">Пар</option>
+                                <option value="Нефть/нефтепродукты">Нефть/нефтепродукты</option>
+                                <option value="Прочее">Прочее</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="total_energy_cost">Общая стоимость (руб.):</label>
-                            <input type="number" id="total_energy_cost" name="total_cost" step="0.01" required>
+                            <label for="quantity_used_energy">Количество использовано:</label>
+                            <input type="number" id="quantity_used_energy" name="quantity_used" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cost_per_unit_energy">Стоимость за единицу (руб.):</label>
+                            <input type="number" id="cost_per_unit_energy" name="cost_per_unit" step="0.01" min="0" required>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Logistics Fields -->
                 <div id="logistics-fields" class="cost-type-fields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
@@ -349,12 +373,17 @@
                             <input type="text" id="logistics_route" name="route" placeholder="например: Москва-Санкт-Петербург">
                         </div>
                         <div class="form-group">
-                            <label for="logistics_total_cost">Общая стоимость затрат (руб.):</label>
-                            <input type="number" id="logistics_total_cost" name="total_cost" step="0.01" required>
+                            <label for="quantity_used_logistics">Количество использовано:</label>
+                            <input type="number" id="quantity_used_logistics" name="quantity_used" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cost_per_unit_logistics">Стоимость за единицу (руб.):</label>
+                            <input type="number" id="cost_per_unit_logistics" name="cost_per_unit" step="0.01" min="0" required>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Labor Fields -->
                 <div id="labor-fields" class="cost-type-fields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
@@ -363,15 +392,16 @@
                         </div>
                         <div class="form-group">
                             <label for="salary_cost">ФОТ (руб.):</label>
-                            <input type="number" id="salary_cost" name="salary_cost" step="0.01" required>
+                            <input type="number" id="salary_cost" name="salary_cost" step="0.01" min="0" required>
                         </div>
                         <div class="form-group">
                             <label for="benefits">Начисления (руб.):</label>
-                            <input type="number" id="benefits" name="benefits" step="0.01" required>
+                            <input type="number" id="benefits" name="benefits" step="0.01" min="0" required>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Depreciation Fields -->
                 <div id="depreciation-fields" class="cost-type-fields" style="display: none;">
                     <div class="form-row">
                         <div class="form-group">
@@ -380,7 +410,7 @@
                         </div>
                         <div class="form-group">
                             <label for="depreciation_amount">Сумма амортизации (руб.):</label>
-                            <input type="number" id="depreciation_amount" name="depreciation_amount" step="0.01" required>
+                            <input type="number" id="depreciation_amount" name="depreciation_amount" step="0.01" min="0" required>
                         </div>
                     </div>
                 </div>
@@ -407,31 +437,31 @@
                         case 'raw_material':
                             echo "<td>Сырье</td>";
                             echo "<td>" . htmlspecialchars($cost['material_type'] ?? '') . "</td>";
-                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
-                            echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . ", Кол-во: " . $cost['quantity_used'] . "</td>";
+                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . " руб.</td>";
+                            echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . " руб., Кол-во: " . $cost['quantity_used'] . "</td>";
                             break;
                         case 'energy':
                             echo "<td>Энергия</td>";
                             echo "<td>" . htmlspecialchars($cost['energy_type'] ?? '') . "</td>";
-                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
-                            echo "<td>-</td>";
+                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . " руб.</td>";
+                            echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . " руб., Кол-во: " . $cost['quantity_used'] . "</td>";
                             break;
                         case 'logistics':
                             echo "<td>Логистика</td>";
                             echo "<td>" . htmlspecialchars($cost['route'] ?? '') . "</td>";
-                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
-                            echo "<td>-</td>";
+                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . " руб.</td>";
+                            echo "<td>Ед.стоимость: " . number_format($cost['cost_per_unit'], 2, '.', ' ') . " руб., Кол-во: " . $cost['quantity_used'] . "</td>";
                             break;
                         case 'labor':
                             echo "<td>Заработная плата</td>";
                             echo "<td>" . htmlspecialchars($cost['department'] ?? '') . "</td>";
-                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . "</td>";
-                            echo "<td>ФОТ: " . number_format($cost['salary_cost'], 2, '.', ' ') . ", Начисления: " . number_format($cost['benefits'], 2, '.', ' ') . "</td>";
+                            echo "<td>" . number_format($cost['total_cost'], 2, '.', ' ') . " руб.</td>";
+                            echo "<td>ФОТ: " . number_format($cost['salary_cost'], 2, '.', ' ') . " руб., Начисления: " . number_format($cost['benefits'], 2, '.', ' ') . " руб.</td>";
                             break;
                         case 'depreciation':
                             echo "<td>Амортизация</td>";
                             echo "<td>" . htmlspecialchars($cost['asset_name'] ?? '') . "</td>";
-                            echo "<td>" . number_format($cost['depreciation_amount'], 2, '.', ' ') . "</td>";
+                            echo "<td>" . number_format($cost['depreciation_amount'], 2, '.', ' ') . " руб.</td>";
                             echo "<td>-</td>";
                             break;
                     }
@@ -658,30 +688,67 @@ document.addEventListener('DOMContentLoaded', function() {
             fieldGroup.style.display = 'none';
             // Disable all inputs within this group
             const inputs = fieldGroup.querySelectorAll('input, select');
-            inputs.forEach(input => input.disabled = true);
+            inputs.forEach(input => {
+                input.disabled = true;
+                // Remove required attribute when hidden
+                if(input.hasAttribute('required')) {
+                    input.removeAttribute('data-required');
+                    input.removeAttribute('required');
+                }
+            });
         });
 
         // Show and enable fields for the selected cost type
         if (costType === 'raw_material') {
             document.getElementById('raw-material-fields').style.display = 'block';
             const rawMaterialInputs = document.getElementById('raw-material-fields').querySelectorAll('input, select');
-            rawMaterialInputs.forEach(input => input.disabled = false);
+            rawMaterialInputs.forEach(input => {
+                input.disabled = false;
+                // Restore required attribute if it was originally required
+                if(input.name === 'quantity_used' || input.name === 'cost_per_unit') {
+                    input.setAttribute('required', 'required');
+                }
+            });
         } else if (costType === 'energy') {
             document.getElementById('energy-fields').style.display = 'block';
             const energyInputs = document.getElementById('energy-fields').querySelectorAll('input, select');
-            energyInputs.forEach(input => input.disabled = false);
+            energyInputs.forEach(input => {
+                input.disabled = false;
+                // Restore required attribute if it was originally required
+                if(input.name === 'quantity_used' || input.name === 'cost_per_unit') {
+                    input.setAttribute('required', 'required');
+                }
+            });
         } else if (costType === 'logistics') {
             document.getElementById('logistics-fields').style.display = 'block';
             const logisticsInputs = document.getElementById('logistics-fields').querySelectorAll('input, select');
-            logisticsInputs.forEach(input => input.disabled = false);
+            logisticsInputs.forEach(input => {
+                input.disabled = false;
+                // Restore required attribute if it was originally required
+                if(input.name === 'quantity_used' || input.name === 'cost_per_unit') {
+                    input.setAttribute('required', 'required');
+                }
+            });
         } else if (costType === 'labor') {
             document.getElementById('labor-fields').style.display = 'block';
             const laborInputs = document.getElementById('labor-fields').querySelectorAll('input, select');
-            laborInputs.forEach(input => input.disabled = false);
+            laborInputs.forEach(input => {
+                input.disabled = false;
+                // Restore required attribute if it was originally required
+                if(input.name === 'salary_cost' || input.name === 'benefits') {
+                    input.setAttribute('required', 'required');
+                }
+            });
         } else if (costType === 'depreciation') {
             document.getElementById('depreciation-fields').style.display = 'block';
             const depreciationInputs = document.getElementById('depreciation-fields').querySelectorAll('input, select');
-            depreciationInputs.forEach(input => input.disabled = false);
+            depreciationInputs.forEach(input => {
+                input.disabled = false;
+                // Restore required attribute if it was originally required
+                if(input.name === 'depreciation_amount') {
+                    input.setAttribute('required', 'required');
+                }
+            });
         }
     }
     
