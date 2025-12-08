@@ -402,6 +402,7 @@ if ($_POST['action'] ?? '' == 'add_production') {
     echo "alert('Производственные данные успешно добавлены!');";
     // Redirect to prevent re-submission and stay on the production tab
     echo "window.location.href = '?action=data-input&project_id=$projectId&tab=production';";
+}
 
 if (isset($_GET['delete_prod'])) {
     $prodId = (int)$_GET['delete_prod'];
