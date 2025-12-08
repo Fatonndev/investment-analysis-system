@@ -17,6 +17,9 @@
     }
     
     echo "<h3>Проект: " . htmlspecialchars($project['name']) . "</h3>";
+    
+    // Get product types from database
+    $productTypes = $db->fetchAll("SELECT * FROM product_types ORDER BY name");
     ?>
     
     <div class="data-input-tabs">
@@ -41,10 +44,15 @@
                     <div class="form-group">
                         <label for="product_type">Тип продукции:</label>
                         <select id="product_type" name="product_type" required>
-                            <option value="Стальные трубы">Стальные трубы</option>
-                            <option value="Трубная заготовка">Трубная заготовка</option>
-                            <option value="Оцинкованные трубы">Оцинкованные трубы</option>
-                            <option value="Специальные трубы">Специальные трубы</option>
+                            <?php foreach ($productTypes as $type): ?>
+                                <option value="<?php echo htmlspecialchars($type['name']); ?>"><?php echo htmlspecialchars($type['name']); ?></option>
+                            <?php endforeach; ?>
+                            <?php if (empty($productTypes)): ?>
+                                <option value="Стальные трубы">Стальные трубы</option>
+                                <option value="Трубная заготовка">Трубная заготовка</option>
+                                <option value="Оцинкованные трубы">Оцинкованные трубы</option>
+                                <option value="Специальные трубы">Специальные трубы</option>
+                            <?php endif; ?>
                         </select>
                     </div>
                 </div>
@@ -190,10 +198,15 @@
                     <div class="form-group">
                         <label for="price_product_type">Тип продукции:</label>
                         <select id="price_product_type" name="product_type" required>
-                            <option value="Стальные трубы">Стальные трубы</option>
-                            <option value="Трубная заготовка">Трубная заготовка</option>
-                            <option value="Оцинкованные трубы">Оцинкованные трубы</option>
-                            <option value="Специальные трубы">Специальные трубы</option>
+                            <?php foreach ($productTypes as $type): ?>
+                                <option value="<?php echo htmlspecialchars($type['name']); ?>"><?php echo htmlspecialchars($type['name']); ?></option>
+                            <?php endforeach; ?>
+                            <?php if (empty($productTypes)): ?>
+                                <option value="Стальные трубы">Стальные трубы</option>
+                                <option value="Трубная заготовка">Трубная заготовка</option>
+                                <option value="Оцинкованные трубы">Оцинкованные трубы</option>
+                                <option value="Специальные трубы">Специальные трубы</option>
+                            <?php endif; ?>
                         </select>
                     </div>
                 </div>
