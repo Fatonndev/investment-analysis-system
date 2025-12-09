@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const data = [cashFlows[0]]; // Initial investment
     
     for (let i = 1; i < cashFlows.length; i++) {
-        labels.push('Год ' + i);
+        labels.push('Месяц ' + i);
         data.push(cashFlows[i]);
     }
     
