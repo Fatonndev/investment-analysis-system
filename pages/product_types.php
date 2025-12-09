@@ -78,7 +78,7 @@ if (isset($_GET['edit'])) {
             
             <div class="form-group">
                 <label for="description">Описание:</label>
-                <textarea id="description" name="description"><?php echo $editProductType ? htmlspecialchars($editProductType['description']) : ''; ?></textarea>
+                <textarea id="description" name="description"><?php echo $editProductType ? htmlspecialchars($editProductType['description'] ?? '') : ''; ?></textarea>
             </div>
             
             <button type="submit" class="btn-primary"><?php echo $editProductType ? 'Обновить' : 'Добавить'; ?></button>
@@ -110,7 +110,7 @@ if (isset($_GET['edit'])) {
                 <tr>
                     <td><?php echo $type['id']; ?></td>
                     <td><?php echo htmlspecialchars($type['name']); ?></td>
-                    <td><?php echo htmlspecialchars($type['description']); ?></td>
+                    <td><?php echo htmlspecialchars($type['description'] ?? ''); ?></td>
                     <td><?php echo $type['created_at']; ?></td>
                     <td>
                         <a href="?action=product-types&edit=<?php echo $type['id']; ?>" class="btn-small btn-primary">Редактировать</a>
