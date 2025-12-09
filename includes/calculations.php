@@ -23,13 +23,12 @@ class InvestmentAnalysis {
      */
     public function calculateNPV($cashFlows, $discountRate) {
         $npv = 0;
-        $initialInvestment = abs($cashFlows[0]); // Assuming first value is initial investment
         
-        for ($i = 1; $i < count($cashFlows); $i++) {
+        for ($i = 0; $i < count($cashFlows); $i++) {
+            // Cash flows include both investments and operating cash flows in the right periods
             $npv += $cashFlows[$i] / pow(1 + $discountRate, $i);
         }
         
-        $npv -= $initialInvestment;
         return $npv;
     }
     
@@ -439,31 +438,42 @@ class InvestmentAnalysis {
             $totalInvestment += floatval($investment['amount']);
         }
         
-        // Initialize cash flows with zeros for each period
-        $cashFlows = array_fill(0, count($periods), 0);
+        // Initialize cash flows - add initial investments as first element
+        $initialInvestments = 0;
         
-        // Add investments to cash flows based on investment dates
+        // Separate investments that occur before the first operational period
+        $firstOperationalPeriod = !empty($periods) ? min($periods) : null;
+        
         foreach ($investmentData as $investment) {
             $investmentDate = $investment['investment_date'];
             $investmentAmount = floatval($investment['amount']);
             
-            // Find the corresponding period index for the investment date
-            $periodIndex = null;
-            foreach ($periods as $index => $period) {
-                if ($investmentDate <= $period) {
-                    $periodIndex = $index;
-                    break;
+            if ($firstOperationalPeriod && $investmentDate < $firstOperationalPeriod) {
+                // Investment occurs before first operational period, add to initial investments
+                $initialInvestments += $investmentAmount;
+            } else {
+                // Investment occurs during or after operational periods, needs to be added to specific period
+                // For now, we'll add it to the first period where investment date <= period date
+                $periodIndex = null;
+                foreach ($periods as $index => $period) {
+                    if ($investmentDate <= $period) {
+                        $periodIndex = $index;
+                        break;
+                    }
+                }
+                
+                if ($periodIndex !== null) {
+                    // Adjust cash flow for this period (add negative investment)
+                    if (!isset($operationalCashFlows)) {
+                        $operationalCashFlows = array_fill(0, count($periods), 0);
+                    }
+                    $operationalCashFlows[$periodIndex] -= $investmentAmount;
                 }
             }
-            
-            // If investment date is before all periods, put it in first period
-            if ($periodIndex === null) {
-                $periodIndex = 0;
-            }
-            
-            // Subtract investment from the cash flow of that period
-            $cashFlows[$periodIndex] -= $investmentAmount;
         }
+        
+        // Initialize cash flows with zeros for each operational period
+        $operationalCashFlows = array_fill(0, count($periods), 0);
         
         // Add operating cash flows
         foreach ($financialData as $row) {
@@ -475,7 +485,7 @@ class InvestmentAnalysis {
             // Find the index of this period in our sorted periods array
             $periodIndex = array_search($period, $periods);
             if ($periodIndex !== false) {
-                $cashFlows[$periodIndex] += $profit;
+                $operationalCashFlows[$periodIndex] += $profit;
             }
             
             $totalRevenue += $revenue;
@@ -483,6 +493,10 @@ class InvestmentAnalysis {
             $revenues[] = $revenue;
             $costs[] = $periodCosts;
         }
+        
+        // Combine initial investments with operational cash flows
+        $cashFlows = [-$initialInvestments]; // Initial investment at period 0
+        $cashFlows = array_merge($cashFlows, $operationalCashFlows); // Then operational cash flows
         
         $totalProfit = $totalRevenue - $totalCosts;
         
