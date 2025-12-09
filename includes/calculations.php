@@ -394,32 +394,90 @@ class InvestmentAnalysis {
         $result = $this->db->fetchOne($sql, [$projectId]);
         return $result ? $result['total_investment'] : 0;
     }
+
+    /**
+     * Get detailed investment data for a project
+     */
+    public function getProjectInvestmentData($projectId) {
+        $sql = "SELECT * FROM investment_data WHERE project_id = ? ORDER BY investment_date";
+        return $this->db->fetchAll($sql, [$projectId]);
+    }
+
     
     /**
      * Calculate complete project analysis
      */
     public function calculateProjectAnalysis($projectId) {
         $financialData = $this->getProjectFinancialData($projectId);
-        $totalInvestment = $this->getProjectInvestments($projectId);
+        $investmentData = $this->getProjectInvestmentData($projectId);
         
         if (empty($financialData)) {
             return ['error' => 'Не хватает данных для этого проекта'];
         }
         
         // Prepare cash flows
-        $cashFlows = [-$totalInvestment]; // Initial investment as negative
+        $cashFlows = [];
         
         $totalRevenue = 0;
         $totalCosts = 0;
         $revenues = [];
         $costs = [];
+        $periods = [];
         
+        // Extract unique periods from financial data
         foreach ($financialData as $row) {
+            $period = $row['period'];
+            $periods[] = $period;
+        }
+        
+        // Sort periods to ensure proper chronological order
+        sort($periods);
+        
+        // Calculate total investment amount
+        $totalInvestment = 0;
+        foreach ($investmentData as $investment) {
+            $totalInvestment += floatval($investment['amount']);
+        }
+        
+        // Initialize cash flows with zeros for each period
+        $cashFlows = array_fill(0, count($periods), 0);
+        
+        // Add investments to cash flows based on investment dates
+        foreach ($investmentData as $investment) {
+            $investmentDate = $investment['investment_date'];
+            $investmentAmount = floatval($investment['amount']);
+            
+            // Find the corresponding period index for the investment date
+            $periodIndex = null;
+            foreach ($periods as $index => $period) {
+                if ($investmentDate <= $period) {
+                    $periodIndex = $index;
+                    break;
+                }
+            }
+            
+            // If investment date is before all periods, put it in first period
+            if ($periodIndex === null) {
+                $periodIndex = 0;
+            }
+            
+            // Subtract investment from the cash flow of that period
+            $cashFlows[$periodIndex] -= $investmentAmount;
+        }
+        
+        // Add operating cash flows
+        foreach ($financialData as $row) {
+            $period = $row['period'];
             $revenue = floatval($row['total_revenue']);
             $periodCosts = floatval($row['total_costs']);
             $profit = $revenue - $periodCosts;
             
-            $cashFlows[] = $profit;
+            // Find the index of this period in our sorted periods array
+            $periodIndex = array_search($period, $periods);
+            if ($periodIndex !== false) {
+                $cashFlows[$periodIndex] += $profit;
+            }
+            
             $totalRevenue += $revenue;
             $totalCosts += $periodCosts;
             $revenues[] = $revenue;
