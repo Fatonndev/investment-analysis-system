@@ -122,7 +122,7 @@ class InvestmentAnalysis {
     /**
      * Perform sensitivity analysis
      */
-    public function performSensitivityAnalysis($baseData, $changePercentages = [-20, -10, 10, 20]) {
+    public function performSensitivityAnalysis($baseData, $changePercentages = [-20, -10, 0, 10, 20]) {
         $results = [];
         
         foreach ($changePercentages as $percent) {
@@ -130,14 +130,14 @@ class InvestmentAnalysis {
             $modifiedData = $baseData;
             
             // Adjust revenue by percentage
-            $modifiedData['revenue'] = $baseData['revenue'] * (1 + $percent/100);
+            $modifiedData['revenue'] = $baseData['revenue'];
             
             // Adjust costs by percentage
             $modifiedData['costs'] = $baseData['costs'] * (1 + $percent/100);
             
             // Calculate metrics with modified data
             $profit = $modifiedData['revenue'] - $modifiedData['costs'];
-            $roi = $this->calculateROI($profit, $baseData['investment']);
+            $roi = $this->calculateROI($profit, $modifiedData['costs']);
             
             $results[] = [
                 'change_percent' => $percent,
@@ -350,7 +350,7 @@ class InvestmentAnalysis {
         $totalProfit = $totalRevenue - $totalCosts;
         
         // Calculate metrics
-        $roi = $this->calculateROI($totalProfit, $totalInvestment);
+        $roi = $this->calculateROI($totalProfit, $totalCosts);
         $npv = $this->calculateNPV($cashFlows, 0.1); // Using 10% discount rate
         $irr = $this->calculateIRR($cashFlows);
         $paybackPeriod = $this->calculatePaybackPeriod($cashFlows);
