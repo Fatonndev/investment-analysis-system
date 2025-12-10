@@ -1,9 +1,11 @@
-```php
-# Compiled and build artifacts
+```gitignore
+# Compiled and binary files
 *.pyc
+*.pyo
+*.pyd
+*.class
 *.o
 *.obj
-*.class
 *.exe
 *.dll
 *.so
@@ -11,42 +13,50 @@
 *.out
 
 # Dependencies
+vendor/
 node_modules/
 venv/
 .venv/
 __pycache__/
-.mypy_cache/
-.pytest_cache/
-dist/
+*.egg-info/
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Build and distribution
 build/
-target/
-.gradle/
+dist/
+*.egg
+*.whl
+.coverage
+coverage/
+htmlcov/
+.tox/
+.nox/
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
-*.swp
-*.swo
+logs/
 
-# Environment
+# Environment variables
 .env
 .env.local
-*.env.*
+.env.*
+!.env.example
 
-# Editors
+# Editor and IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# System files
+*~
 .DS_Store
 Thumbs.db
 
-# Coverage
-coverage/
-htmlcov/
-.coverage
+# Testing
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
 
 # Compressed files
 *.zip

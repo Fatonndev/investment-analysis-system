@@ -1,13 +1,15 @@
 <?php
-require_once dirname(__FILE__) . '/database.php';
+// Debug script to check how cash flows are generated in the project analysis
+require_once 'includes/database.php';
+require_once 'includes/calculations.php';
 
-class InvestmentAnalysis {
+class InvestmentAnalysisDebug {
     private $db;
     
     public function __construct() {
         $this->db = new Database();
     }
-    
+
     /**
      * Calculate ROI (Return on Investment)
      */
@@ -33,7 +35,7 @@ class InvestmentAnalysis {
     }
     
     /**
-     * Calculate IRR (Internal Rate of Return) using multiple methods for better reliability
+     * Calculate IRR (Internal Rate of Return) using Newton-Raphson method
      */
     public function calculateIRR($cashFlows, $precision = 0.0001) {
         if (count($cashFlows) < 2) {
@@ -52,25 +54,8 @@ class InvestmentAnalysis {
             return 0; // Cannot calculate IRR if all values are positive or negative
         }
         
-        // Try Newton-Raphson method first with multiple initial guesses
-        $initialGuesses = [0.1, 0.2, 0.3, 0.05, 0.5, 0.75, 1.0, 0.01, 0.02, 0.03];
-        
-        foreach ($initialGuesses as $initialGuess) {
-            $irr = $this->calculateIRRNewtonRaphson($cashFlows, $initialGuess, $precision);
-            if ($irr !== null && abs($this->calculateNPVWithRate($cashFlows, $irr)) < 0.1) {
-                return $irr;
-            }
-        }
-        
-        // If Newton-Raphson fails with initial guesses, try bisection method
-        return $this->calculateIRRBisection($cashFlows, $precision);
-    }
-    
-    /**
-     * Calculate IRR using Newton-Raphson method with a specific initial guess
-     */
-    private function calculateIRRNewtonRaphson($cashFlows, $initialGuess, $precision = 0.0001) {
-        $irr = $initialGuess;
+        // Initial guess for IRR
+        $irr = 0.1; // Start with 10%
         $maxIterations = 100;
         $iteration = 0;
         
@@ -107,7 +92,8 @@ class InvestmentAnalysis {
             $iteration++;
         }
         
-        return null; // Failed to converge
+        // If Newton-Raphson fails, fall back to bisection method with extended range
+        return $this->calculateIRRBisection($cashFlows, $precision);
     }
     
     private function calculateNPVWithRate($cashFlows, $rate) {
@@ -171,33 +157,26 @@ class InvestmentAnalysis {
         
         return $result;
     }
-    
+
     /**
      * Calculate payback period
      */
     public function calculatePaybackPeriod($cashFlows) {
-        // Check if there's an initial negative cash flow (investment)
-        if (empty($cashFlows) || $cashFlows[0] >= 0) {
-            return -1; // No initial investment to pay back
-        }
-        
         $cumulativeCashFlow = 0;
         $paybackPeriod = -1; // Default to -1 (not paying back)
         
         for ($i = 0; $i < count($cashFlows); $i++) {
             $cumulativeCashFlow += $cashFlows[$i];
             
-            // If cumulative cash flow becomes positive or zero, the investment is paid back
             if ($cumulativeCashFlow >= 0) {
                 // Project has paid back by this period
                 if ($i == 0) {
-                    // If payback occurs in the first period (immediate payback)
+                    // If payback occurs in the first period
                     $paybackPeriod = 0;
                 } else {
-                    // Interpolate to find exact payback period between periods
+                    // Interpolate to find exact payback period
                     $previousCumulative = $cumulativeCashFlow - $cashFlows[$i];
                     if ($cashFlows[$i] != 0) {
-                        // Calculate fractional period where payback occurs
                         $paybackPeriod = ($i - 1) + (abs($previousCumulative) / $cashFlows[$i]);
                     } else {
                         $paybackPeriod = $i; // If cash flow is 0, use the period number
@@ -208,187 +187,6 @@ class InvestmentAnalysis {
         }
         
         return $paybackPeriod;
-    }
-    
-    /**
-     * Calculate break-even point
-     */
-    public function calculateBreakEvenPoint($fixedCosts, $pricePerUnit, $variableCostPerUnit) {
-        if (($pricePerUnit - $variableCostPerUnit) == 0) {
-            return 0;
-        }
-        
-        $breakEvenQuantity = $fixedCosts / ($pricePerUnit - $variableCostPerUnit);
-        $breakEvenRevenue = $breakEvenQuantity * $pricePerUnit;
-        
-        return [
-            'quantity' => $breakEvenQuantity,
-            'revenue' => $breakEvenRevenue
-        ];
-    }
-    
-    /**
-     * Perform sensitivity analysis
-     */
-    public function performSensitivityAnalysis($baseData, $changePercentages = [-20, -10, 0, 10, 20]) {
-        $results = [];
-        
-        foreach ($changePercentages as $percent) {
-            // Simulate changes to key parameters
-            $modifiedData = $baseData;
-            
-            // Adjust revenue by percentage
-            $modifiedData['revenue'] = $baseData['revenue'];
-            
-            // Adjust costs by percentage
-            $modifiedData['costs'] = $baseData['costs'] * (1 + $percent/100);
-            
-            // Calculate metrics with modified data
-            $profit = $modifiedData['revenue'] - $modifiedData['costs'];
-            $roi = $this->calculateROI($profit, $modifiedData['costs']);
-            
-            $results[] = [
-                'change_percent' => $percent,
-                'revenue' => $modifiedData['revenue'],
-                'costs' => $modifiedData['costs'],
-                'profit' => $profit,
-                'roi' => $roi
-            ];
-        }
-        
-        return $results;
-    }
-    
-    /**
-     * Simple linear regression for forecasting
-     */
-    public function linearRegression($xValues, $yValues) {
-        $n = count($xValues);
-        if ($n !== count($yValues) || $n < 2) {
-            return ['slope' => 0, 'intercept' => 0, 'r_squared' => 0];
-        }
-        
-        $sumX = array_sum($xValues);
-        $sumY = array_sum($yValues);
-        $sumXY = 0;
-        $sumXX = 0;
-        
-        for ($i = 0; $i < $n; $i++) {
-            $sumXY += $xValues[$i] * $yValues[$i];
-            $sumXX += $xValues[$i] * $xValues[$i];
-        }
-        
-        $slope = ($n * $sumXY - $sumX * $sumY) / ($n * $sumXX - $sumX * $sumX);
-        $intercept = ($sumY - $slope * $sumX) / $n;
-        
-        // Calculate R-squared
-        $meanY = $sumY / $n;
-        $ssTot = 0;
-        $ssReg = 0;
-        
-        for ($i = 0; $i < $n; $i++) {
-            $predictedY = $slope * $xValues[$i] + $intercept;
-            $ssTot += pow($yValues[$i] - $meanY, 2);
-            $ssReg += pow($predictedY - $meanY, 2);
-        }
-        
-        $rSquared = $ssTot != 0 ? $ssReg / $ssTot : 0;
-        
-        return [
-            'slope' => $slope,
-            'intercept' => $intercept,
-            'r_squared' => $rSquared
-        ];
-    }
-    
-    /**
-     * Moving average for forecasting
-     */
-    public function movingAverage($data, $period = 3) {
-        if (count($data) < $period) {
-            return array_slice($data, 0, 1); // Return first value if not enough data
-        }
-        
-        $result = [];
-        for ($i = $period - 1; $i < count($data); $i++) {
-            $sum = 0;
-            for ($j = $i - $period + 1; $j <= $i; $j++) {
-                $sum += $data[$j];
-            }
-            $result[] = $sum / $period;
-        }
-        
-        return $result;
-    }
-    
-    /**
-     * Generate forecast scenarios (optimistic, base, pessimistic)
-     */
-    public function generateForecastScenarios($historicalData, $forecastYears = 3) {
-        // Convert historical data to arrays for regression
-        $xValues = [];
-        $yValues = [];
-        
-        foreach ($historicalData as $index => $value) {
-            $xValues[] = $index;
-            $yValues[] = $value;
-        }
-        
-        // Perform linear regression
-        $regression = $this->linearRegression($xValues, $yValues);
-        
-        $scenarios = [
-            'optimistic' => [],
-            'base' => [],
-            'pessimistic' => []
-        ];
-        
-        $lastIndex = count($xValues) - 1;
-        
-        for ($year = 1; $year <= $forecastYears; $year++) {
-            $futureX = $lastIndex + $year;
-            
-            // Base forecast using linear regression
-            $baseValue = $regression['slope'] * $futureX + $regression['intercept'];
-            
-            // Optimistic scenario: 10% above base
-            $optimisticValue = $baseValue * 1.10;
-            
-            // Pessimistic scenario: 10% below base
-            $pessimisticValue = $baseValue * 0.90;
-            
-            $scenarios['optimistic'][] = max(0, $optimisticValue); // Ensure non-negative
-            $scenarios['base'][] = max(0, $baseValue);
-            $scenarios['pessimistic'][] = max(0, $pessimisticValue);
-        }
-        
-        return $scenarios;
-    }
-    
-    /**
-     * Validate input data
-     */
-    public function validateInputData($data) {
-        $errors = [];
-        
-        // Check for required fields
-        if (!isset($data['revenue']) || $data['revenue'] < 0) {
-            $errors[] = "Revenue must be a non-negative number";
-        }
-        
-        if (!isset($data['costs']) || $data['costs'] < 0) {
-            $errors[] = "Costs must be a non-negative number";
-        }
-        
-        if (!isset($data['investment']) || $data['investment'] <= 0) {
-            $errors[] = "Investment must be a positive number";
-        }
-        
-        if (isset($data['discount_rate']) && $data['discount_rate'] < 0) {
-            $errors[] = "Discount rate must be a non-negative number";
-        }
-        
-        return $errors;
     }
     
     /**
@@ -416,15 +214,6 @@ class InvestmentAnalysis {
     }
     
     /**
-     * Get total investments for a project
-     */
-    public function getProjectInvestments($projectId) {
-        $sql = "SELECT SUM(amount) as total_investment FROM investment_data WHERE project_id = ?";
-        $result = $this->db->fetchOne($sql, [$projectId]);
-        return $result ? $result['total_investment'] : 0;
-    }
-
-    /**
      * Get detailed investment data for a project
      */
     public function getProjectInvestmentData($projectId) {
@@ -432,10 +221,7 @@ class InvestmentAnalysis {
         return $this->db->fetchAll($sql, [$projectId]);
     }
 
-    
-    /**
-     * Calculate complete project analysis
-     */
+    // Override the main analysis function to output debug information
     public function calculateProjectAnalysis($projectId) {
         $financialData = $this->getProjectFinancialData($projectId);
         $investmentData = $this->getProjectInvestmentData($projectId);
@@ -443,6 +229,11 @@ class InvestmentAnalysis {
         if (empty($financialData)) {
             return ['error' => 'Не хватает данных для этого проекта'];
         }
+        
+        echo "DEBUG: Financial Data\n";
+        print_r($financialData);
+        echo "DEBUG: Investment Data\n";
+        print_r($investmentData);
         
         // Prepare cash flows
         $cashFlows = [];
@@ -528,6 +319,10 @@ class InvestmentAnalysis {
         $cashFlows = [-$initialInvestments]; // Initial investment at period 0
         $cashFlows = array_merge($cashFlows, $operationalCashFlows); // Then operational cash flows
         
+        echo "DEBUG: Initial Investments: " . $initialInvestments . "\n";
+        echo "DEBUG: Operational Cash Flows: " . implode(", ", $operationalCashFlows) . "\n";
+        echo "DEBUG: Final Cash Flows: " . implode(", ", $cashFlows) . "\n";
+        
         $totalProfit = $totalRevenue - $totalCosts;
         
         // Calculate metrics
@@ -536,21 +331,7 @@ class InvestmentAnalysis {
         $irr = $this->calculateIRR($cashFlows);
         $paybackPeriod = $this->calculatePaybackPeriod($cashFlows);
         
-        // Break-even analysis
-        $avgRevenuePerPeriod = count($financialData) > 0 ? $totalRevenue / count($financialData) : 0;
-        $avgCostsPerPeriod = count($financialData) > 0 ? $totalCosts / count($financialData) : 0;
-        $avgFixedCostsPerPeriod = 0; // Would need more specific data
-        
-        // Sensitivity analysis
-        $baseData = [
-            'revenue' => $totalRevenue,
-            'costs' => $totalCosts,
-            'investment' => $totalInvestment
-        ];
-        $sensitivityResults = $this->performSensitivityAnalysis($baseData);
-        
-        // Forecasting
-        $forecastScenarios = $this->generateForecastScenarios($revenues, 3);
+        echo "DEBUG: ROI: $roi, NPV: $npv, IRR: $irr, Payback: $paybackPeriod\n";
         
         return [
             'cash_flows' => $cashFlows,
@@ -561,10 +342,24 @@ class InvestmentAnalysis {
             'roi' => $roi,
             'npv' => $npv,
             'irr' => $irr,
-            'payback_period' => $paybackPeriod,
-            'sensitivity_analysis' => $sensitivityResults,
-            'forecast_scenarios' => $forecastScenarios
+            'payback_period' => $paybackPeriod
         ];
     }
+}
+
+// Connect to DB and test with a project
+$db = new Database();
+$analysis = new InvestmentAnalysisDebug();
+
+// Get first project ID to test
+$projects = $db->fetchAll("SELECT id, name FROM projects LIMIT 1");
+if (!empty($projects)) {
+    $projectId = $projects[0]['id'];
+    echo "Testing project ID: $projectId\n";
+    $result = $analysis->calculateProjectAnalysis($projectId);
+    echo "Final IRR result: " . ($result['irr'] * 100) . "%\n";
+    echo "Final Payback result: " . ($result['payback_period'] > 0 ? $result['payback_period'] . " years" : "Does not pay back") . "\n";
+} else {
+    echo "No projects found to test.\n";
 }
 ?>
