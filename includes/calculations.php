@@ -161,19 +161,26 @@ class InvestmentAnalysis {
      */
     public function calculatePaybackPeriod($cashFlows) {
         $cumulativeCashFlow = 0;
-        $paybackPeriod = 0;
+        $paybackPeriod = -1; // Default to -1 (not paying back)
         
         for ($i = 0; $i < count($cashFlows); $i++) {
             $cumulativeCashFlow += $cashFlows[$i];
             
-            if ($cumulativeCashFlow >= 0 && $i > 0) {
-                // Interpolate to find exact payback period
-                $previousCumulative = $cumulativeCashFlow - $cashFlows[$i];
-                $paybackPeriod = $i - 1 + (abs($previousCumulative) / $cashFlows[$i]);
+            if ($cumulativeCashFlow >= 0) {
+                // Project has paid back by this period
+                if ($i == 0) {
+                    // If payback occurs in the first period
+                    $paybackPeriod = 0;
+                } else {
+                    // Interpolate to find exact payback period
+                    $previousCumulative = $cumulativeCashFlow - $cashFlows[$i];
+                    if ($cashFlows[$i] != 0) {
+                        $paybackPeriod = ($i - 1) + (abs($previousCumulative) / $cashFlows[$i]);
+                    } else {
+                        $paybackPeriod = $i; // If cash flow is 0, use the period number
+                    }
+                }
                 break;
-            } elseif ($i === count($cashFlows) - 1 && $cumulativeCashFlow < 0) {
-                // Project never pays back
-                $paybackPeriod = -1;
             }
         }
         
@@ -441,6 +448,9 @@ class InvestmentAnalysis {
         // Initialize cash flows - add initial investments as first element
         $initialInvestments = 0;
         
+        // Initialize cash flows with zeros for each operational period
+        $operationalCashFlows = array_fill(0, count($periods), 0);
+        
         // Separate investments that occur before the first operational period
         $firstOperationalPeriod = !empty($periods) ? min($periods) : null;
         
@@ -464,16 +474,13 @@ class InvestmentAnalysis {
                 
                 if ($periodIndex !== null) {
                     // Adjust cash flow for this period (add negative investment)
-                    if (!isset($operationalCashFlows)) {
-                        $operationalCashFlows = array_fill(0, count($periods), 0);
-                    }
                     $operationalCashFlows[$periodIndex] -= $investmentAmount;
+                } else {
+                    // If investment date doesn't match any operational period, add to last period
+                    $operationalCashFlows[count($periods) - 1] -= $investmentAmount;
                 }
             }
         }
-        
-        // Initialize cash flows with zeros for each operational period
-        $operationalCashFlows = array_fill(0, count($periods), 0);
         
         // Add operating cash flows
         foreach ($financialData as $row) {
