@@ -474,7 +474,7 @@ class InvestmentAnalysis {
         // Initialize cash flows with zeros for each operational period
         $operationalCashFlows = array_fill(0, count($periods), 0);
         
-        // Separate investments that occur before the first operational period
+        // Separate investments that occur before or at the first operational period
         $firstOperationalPeriod = !empty($periods) ? min($periods) : null;
         
         foreach ($investmentData as $investment) {
@@ -483,6 +483,9 @@ class InvestmentAnalysis {
             
             if ($firstOperationalPeriod && $investmentDate < $firstOperationalPeriod) {
                 // Investment occurs before first operational period, add to initial investments
+                $initialInvestments += $investmentAmount;
+            } else if ($firstOperationalPeriod && $investmentDate == $firstOperationalPeriod) {
+                // Investment occurs at the same time as the first operational period, add to initial investments
                 $initialInvestments += $investmentAmount;
             } else {
                 // Investment occurs during or after operational periods, needs to be added to specific period

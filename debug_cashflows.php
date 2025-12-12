@@ -265,7 +265,7 @@ class InvestmentAnalysisDebug {
         // Initialize cash flows with zeros for each operational period
         $operationalCashFlows = array_fill(0, count($periods), 0);
         
-        // Separate investments that occur before the first operational period
+        // Separate investments that occur before or at the first operational period
         $firstOperationalPeriod = !empty($periods) ? min($periods) : null;
         
         foreach ($investmentData as $investment) {
@@ -274,6 +274,9 @@ class InvestmentAnalysisDebug {
             
             if ($firstOperationalPeriod && $investmentDate < $firstOperationalPeriod) {
                 // Investment occurs before first operational period, add to initial investments
+                $initialInvestments += $investmentAmount;
+            } else if ($firstOperationalPeriod && $investmentDate == $firstOperationalPeriod) {
+                // Investment occurs at the same time as the first operational period, add to initial investments
                 $initialInvestments += $investmentAmount;
             } else {
                 // Investment occurs during or after operational periods, needs to be added to specific period
@@ -351,8 +354,8 @@ class InvestmentAnalysisDebug {
 $db = new Database();
 $analysis = new InvestmentAnalysisDebug();
 
-// Get first project ID to test
-$projects = $db->fetchAll("SELECT id, name FROM projects LIMIT 1");
+// Get project ID 2 to test (with better cash flows)
+$projects = $db->fetchAll("SELECT id, name FROM projects WHERE id = 2");
 if (!empty($projects)) {
     $projectId = $projects[0]['id'];
     echo "Testing project ID: $projectId\n";
