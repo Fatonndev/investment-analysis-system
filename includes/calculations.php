@@ -49,30 +49,94 @@ class InvestmentAnalysis {
         }
         
         if (!$hasPositive || !$hasNegative) {
+            // If all cash flows are positive after initial investment, it's extremely profitable
+            // In this case, we can return a high IRR value or handle this case specially
+            if ($cashFlows[0] < 0 && $hasPositive) {  // Initial investment is negative, all other flows are positive
+                // This is an extremely profitable project - try to find a very high IRR
+                $maxCashFlow = max(array_map('abs', $cashFlows));
+                $tolerance = max(100, $maxCashFlow * 0.0001); // 0.01% of the largest cash flow
+                
+                // Try with extremely high rates to see if we can find where NPV approaches zero
+                $highRates = [10, 20, 50, 100, 200, 500, 1000]; // 1000% to 100000%
+                
+                foreach ($highRates as $rate) {
+                    $npv = $this->calculateNPVWithRate($cashFlows, $rate);
+                    if (abs($npv) < $tolerance) {
+                        return $rate;
+                    }
+                }
+                
+                // If NPV is still positive at very high rates, this indicates extremely high IRR
+                // Return a large value to indicate this special case
+                return 10.0; // 1000% - indicating extremely high profitability
+            }
             return 0; // Cannot calculate IRR if all values are positive or negative
         }
         
+        // Calculate a more appropriate tolerance based on the scale of cash flows
+        $maxCashFlow = max(array_map('abs', $cashFlows));
+        $tolerance = max(100, $maxCashFlow * 0.0001); // 0.01% of the largest cash flow
+        
         // Method 1: Try with several initial guesses using secant method
-        $initialGuesses = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.1, 0.01, 0.02];
+        $initialGuesses = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.1, 0.01, 0.02, -0.1, -0.05];
         
         foreach ($initialGuesses as $guess) {
             $irr = $this->calculateIRRSecantMethod($cashFlows, $guess, $precision);
-            if ($irr !== false && abs($this->calculateNPVWithRate($cashFlows, $irr)) < 0.01) {
+            $npvAtIrr = $this->calculateNPVWithRate($cashFlows, $irr);
+            if ($irr !== false && abs($npvAtIrr) < $tolerance) { // Dynamic tolerance based on cash flow scale
                 return $irr;
             }
         }
         
         // Method 2: Try bisection method
         $irr = $this->calculateIRRBisectionMethod($cashFlows, $precision);
-        if ($irr !== false && abs($this->calculateNPVWithRate($cashFlows, $irr)) < 0.01) {
+        $npvAtIrr = $this->calculateNPVWithRate($cashFlows, $irr);
+        if ($irr !== false && abs($npvAtIrr) < $tolerance) { // Dynamic tolerance based on cash flow scale
             return $irr;
         }
         
         // Method 3: Try Newton-Raphson with various starting points
         foreach ($initialGuesses as $guess) {
             $irr = $this->calculateIRRNewtonRaphsonSimple($cashFlows, $guess, $precision);
-            if ($irr !== false && abs($this->calculateNPVWithRate($cashFlows, $irr)) < 0.01) {
+            $npvAtIrr = $this->calculateNPVWithRate($cashFlows, $irr);
+            if ($irr !== false && abs($npvAtIrr) < $tolerance) { // Dynamic tolerance based on cash flow scale
                 return $irr;
+            }
+        }
+        
+        // Additional method: Try a wider range of guesses
+        for ($i = -90; $i <= 500; $i += 10) {  // From -90% to 500% in 10% increments
+            $guess = $i / 100.0;
+            $irr = $this->calculateIRRSecantMethod($cashFlows, $guess, $precision);
+            $npvAtIrr = $this->calculateNPVWithRate($cashFlows, $irr);
+            if ($irr !== false && abs($npvAtIrr) < $tolerance) {
+                return $irr;
+            }
+        }
+        
+        // Additional method: Try binary search approach with broader range
+        $low = -0.90; // -90%
+        $high = 5.0;  // 500%
+        $maxIterations = 50; // Limit iterations to prevent long execution
+        
+        for ($iter = 0; $iter < $maxIterations; $iter++) {
+            $mid = ($low + $high) / 2;
+            $npv = $this->calculateNPVWithRate($cashFlows, $mid);
+            
+            if (abs($npv) < $tolerance) {
+                return $mid;
+            }
+            
+            // Check the sign of NPV at low and mid
+            $npvLow = $this->calculateNPVWithRate($cashFlows, $low);
+            $npvMid = $this->calculateNPVWithRate($cashFlows, $mid);
+            
+            // If NPV changes sign between low and mid, root is in [low, mid]
+            if (($npvLow > 0) != ($npvMid > 0)) {
+                $high = $mid;
+            } else {
+                // Root is in [mid, high]
+                $low = $mid;
             }
         }
         
