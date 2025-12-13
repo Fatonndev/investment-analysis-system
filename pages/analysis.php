@@ -186,19 +186,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const investmentData = []; // For negative values (investments)
     const revenueData = []; // For positive values (revenues)
     
-    // Add initial investment
-    labels.push('Инвестиции');
-    if (cashFlows[0] < 0) {
-        investmentData.push(cashFlows[0]);
-        revenueData.push(0);
-    } else {
-        investmentData.push(0);
-        revenueData.push(cashFlows[0]);
-    }
-    
-    // Add monthly flows
-    for (let i = 1; i < cashFlows.length; i++) {
-        labels.push('Месяц ' + i);
+    // Process all cash flows by period
+    for (let i = 0; i < cashFlows.length; i++) {
+        labels.push('Месяц ' + (i + 1));
         if (cashFlows[i] < 0) {
             investmentData.push(cashFlows[i]); // Negative values (investments/expenses)
             revenueData.push(0);
