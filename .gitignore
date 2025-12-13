@@ -1,6 +1,1 @@
-(debug_irr_detailed.php
-test_fixed_irr.php
-test_irr_calculation.php
-test_irr_simple.php
-test_standalone_fixed.php
-includes/calculations.php)
+Nothing needs to be added to .gitignore since the changes only include PHP source files (.php) which are not build artifacts, dependencies, or temporary files.

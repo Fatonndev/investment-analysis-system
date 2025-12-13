@@ -110,6 +110,58 @@ class InvestmentAnalysis {
     }
     
     /**
+     * Calculate IRR (Internal Rate of Return)
+     */
+    public function calculateIRR($cashFlows, $precision = 0.00001, $maxIterations = 100) {
+        // Check if we have at least one positive and one negative cash flow
+        $hasPositive = false;
+        $hasNegative = false;
+        
+        foreach ($cashFlows as $cf) {
+            if ($cf > 0) $hasPositive = true;
+            if ($cf < 0) $hasNegative = true;
+        }
+        
+        if (!$hasPositive || !$hasNegative) {
+            return null; // IRR cannot be calculated without both positive and negative values
+        }
+        
+        // Initial guess for IRR
+        $irr = 0.1; // Start with 10%
+        
+        for ($iteration = 0; $iteration < $maxIterations; $iteration++) {
+            $npv = 0;
+            $derivative = 0;
+            
+            for ($i = 0; $i < count($cashFlows); $i++) {
+                $npv += $cashFlows[$i] / pow(1 + $irr, $i);
+                
+                if ($i > 0) {
+                    $derivative += -$i * $cashFlows[$i] / pow(1 + $irr, $i + 1);
+                }
+            }
+            
+            // Newton-Raphson method: new_guess = old_guess - f(x)/f'(x)
+            $newIrr = $irr - $npv / $derivative;
+            
+            // Check for convergence
+            if (abs($newIrr - $irr) < $precision) {
+                return $newIrr;
+            }
+            
+            $irr = $newIrr;
+            
+            // Check for convergence to avoid infinite loops
+            if (abs($npv) < $precision) {
+                return $irr;
+            }
+        }
+        
+        // If we don't converge, return the best approximation
+        return $irr;
+    }
+    
+    /**
      * Calculate break-even point
      */
     public function calculateBreakEvenPoint($fixedCosts, $pricePerUnit, $variableCostPerUnit) {
@@ -453,7 +505,7 @@ class InvestmentAnalysis {
         $roi = $this->calculateROI($totalProfit, $totalCosts);
         $npv = $this->calculateNPV($cashFlows, 0.1); // Using 10% discount rate
         var_dump($cashFlows);
-        //$irr = $this->calculateIRR($cashFlows);
+        $irr = $this->calculateIRR($cashFlows);
         $paybackPeriod = $this->calculatePaybackPeriod($cashFlows);
         
         // Break-even analysis
