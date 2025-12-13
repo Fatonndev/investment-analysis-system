@@ -110,7 +110,7 @@
         
         <!-- Cash Flow Chart -->
         <div class="chart-container">
-            <h4>Денежные потоки по периодам</h4>
+            <h4>Денежные потоки по месяцам</h4>
             <canvas id="cashFlowChart" width="400" height="200"></canvas>
         </div>
         
@@ -194,9 +194,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const periods = <?php echo json_encode($analysisResults['periods']); ?>;
     
     // Process all periods with their respective investments and revenues
-    for (let i = 0; i < Math.max(periodInvestments.length, <?php echo $forecastYears; ?>); i++) {
-        // Use period number from the database or just incrementing year number
-        labels.push(periods[i] ? 'Год ' + periods[i] : 'Год ' + (i + 1));
+    for (let i = 0; i < Math.max(periodInvestments.length, <?php echo $forecastYears; ?> * 12); i++) {
+        // Use period number from the database or just incrementing month number
+        labels.push(periods[i] ? 'Месяц ' + periods[i] : 'Месяц ' + (i + 1));
         
         // Add investments as negative values (for red bars going down)
         const investmentValue = i < periodInvestments.length ? periodInvestments[i] : 0;
@@ -368,9 +368,9 @@ function updateCashFlowChart(discountRate, forecastYears, projectId) {
             const periods = data.periods;
             
             // Process all periods with their respective investments and revenues
-            for (let i = 0; i < Math.max(periodInvestments.length, forecastYears); i++) {
+            for (let i = 0; i < Math.max(periodInvestments.length, forecastYears * 12); i++) {
                 // Use period number from the database or just incrementing year number
-                labels.push(periods[i] ? 'Год ' + periods[i] : 'Год ' + (i + 1));
+                labels.push(periods[i] ? 'Месяц ' + periods[i] : 'Месяц ' + (i + 1));
                 
                 // Add investments as negative values (for red bars going down)
                 const investmentValue = i < periodInvestments.length ? periodInvestments[i] : 0;

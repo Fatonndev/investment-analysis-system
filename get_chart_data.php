@@ -24,7 +24,8 @@ try {
         'success' => true,
         'period_investments_by_period' => $analysisResults['period_investments_by_period'],
         'period_revenues_by_period' => $analysisResults['period_revenues_by_period'],
-        'periods' => $analysisResults['periods']
+        'periods' => $analysisResults['periods'],
+        'months_count' => $analysisResults['months_count']
     ]);
 
 } catch (Exception $e) {
