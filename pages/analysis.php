@@ -181,32 +181,59 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
     const cashFlows = <?php echo json_encode($analysisResults['cash_flows']); ?>;
     
-    // Prepare data for chart
-    const labels = ['Инвестиции'];
-    const data = [cashFlows[0]]; // Initial investment
+    // Prepare data for chart - separate investments and revenues
+    const labels = [];
+    const investmentData = []; // For negative values (investments)
+    const revenueData = []; // For positive values (revenues)
     
+    // Add initial investment
+    labels.push('Инвестиции');
+    if (cashFlows[0] < 0) {
+        investmentData.push(cashFlows[0]);
+        revenueData.push(0);
+    } else {
+        investmentData.push(0);
+        revenueData.push(cashFlows[0]);
+    }
+    
+    // Add monthly flows
     for (let i = 1; i < cashFlows.length; i++) {
         labels.push('Месяц ' + i);
-        data.push(cashFlows[i]);
+        if (cashFlows[i] < 0) {
+            investmentData.push(cashFlows[i]); // Negative values (investments/expenses)
+            revenueData.push(0);
+        } else {
+            investmentData.push(0);
+            revenueData.push(cashFlows[i]); // Positive values (incomes/revenues)
+        }
     }
     
     new Chart(ctx1, {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'Денежный поток (руб.)',
-                data: data,
-                backgroundColor: data.map(value => value >= 0 ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)'),
-                borderColor: data.map(value => value >= 0 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'),
-                borderWidth: 1
-            }]
+            datasets: [
+                {
+                    label: 'Доходы (руб.)',
+                    data: revenueData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Инвестиции (руб.)',
+                    data: investmentData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
         },
         options: {
             responsive: true,
             scales: {
                 y: {
-                    beginAtZero: false
+                    beginAtZero: true
                 }
             }
         }
