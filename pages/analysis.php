@@ -18,8 +18,12 @@
     
     echo "<h3>Проект: " . htmlspecialchars($project['name']) . "</h3>";
     
-    // Perform analysis
-    $analysisResults = $analysis->calculateProjectAnalysis($projectId);
+    // Get analysis parameters from GET request
+    $discountRate = isset($_GET['discount_rate']) ? floatval($_GET['discount_rate']) : 10;
+    $forecastYears = isset($_GET['forecast_years']) ? intval($_GET['forecast_years']) : 3;
+    
+    // Perform analysis with parameters
+    $analysisResults = $analysis->calculateProjectAnalysis($projectId, $discountRate / 100, $forecastYears);
     
     if (isset($analysisResults['error'])) {
         echo "<div class='alert-error'>" . $analysisResults['error'] . "</div>";
@@ -36,11 +40,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="discount_rate">Ставка дисконтирования (%):</label>
-                    <input type="number" id="discount_rate" name="discount_rate" value="10" min="0" max="100" step="0.1">
+                    <input type="number" id="discount_rate" name="discount_rate" value="<?php echo $discountRate; ?>" min="0" max="100" step="0.1">
                 </div>
                 <div class="form-group">
                     <label for="forecast_years">Горизонт прогнозирования (лет):</label>
-                    <input type="number" id="forecast_years" name="forecast_years" value="3" min="1" max="10">
+                    <input type="number" id="forecast_years" name="forecast_years" value="<?php echo $forecastYears; ?>" min="1" max="10">
                 </div>
             </div>
             <button type="submit" class="btn-primary">Пересчитать</button>
@@ -141,7 +145,7 @@
         
         <!-- Forecast Scenarios -->
         <div class="forecast-scenarios">
-            <h4>Прогнозные сценарии (на 3 года)</h4>
+            <h4>Прогнозные сценарии (на <?php echo $forecastYears; ?> года)</h4>
             <div class="chart-container">
                 <canvas id="forecastChart" width="400" height="200"></canvas>
             </div>
@@ -158,7 +162,6 @@
                     </thead>
                     <tbody>
                         <?php
-                        $forecastYears = 3;
                         for ($i = 1; $i <= $forecastYears; $i++) {
                             echo "<tr>";
                             echo "<td>Год " . $i . "</td>";
@@ -240,10 +243,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx2 = document.getElementById('forecastChart').getContext('2d');
     const forecastScenarios = <?php echo json_encode($analysisResults['forecast_scenarios']); ?>;
     
+    // Generate labels dynamically based on forecast years
+    const forecastLabels = [];
+    for (let i = 1; i <= <?php echo $forecastYears; ?>; i++) {
+        forecastLabels.push('Год ' + i);
+    }
+    
     new Chart(ctx2, {
         type: 'line',
         data: {
-            labels: ['Год 1', 'Год 2', 'Год 3'],
+            labels: forecastLabels,
             datasets: [
                 {
                     label: 'Оптимистичный сценарий',

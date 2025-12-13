@@ -387,7 +387,7 @@ class InvestmentAnalysis {
     /**
      * Calculate complete project analysis
      */
-    public function calculateProjectAnalysis($projectId) {
+    public function calculateProjectAnalysis($projectId, $discountRate = 0.1, $forecastYears = 3) {
         $financialData = $this->getProjectFinancialData($projectId);
         $investmentData = $this->getProjectInvestmentData($projectId);
         
@@ -561,8 +561,7 @@ class InvestmentAnalysis {
         
         // Calculate metrics
         $roi = $this->calculateROI($totalProfit, $totalCosts);
-        $npv = $this->calculateNPV($cashFlows, 0.1); // Using 10% discount rate
-        var_dump($cashFlows);
+        $npv = $this->calculateNPV($cashFlows, $discountRate); // Use the passed discount rate
         $irr = $this->calculateIRR($cashFlows);
         $paybackPeriod = $this->calculatePaybackPeriod($cashFlows);
         
@@ -580,7 +579,7 @@ class InvestmentAnalysis {
         $sensitivityResults = $this->performSensitivityAnalysis($baseData);
         
         // Forecasting
-        $forecastScenarios = $this->generateForecastScenarios($revenues, 3);
+        $forecastScenarios = $this->generateForecastScenarios($revenues, $forecastYears);
         
         return [
             'cash_flows' => $cashFlows,
