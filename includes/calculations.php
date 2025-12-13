@@ -495,9 +495,67 @@ class InvestmentAnalysis {
             }
         }
         
-        // Combine initial investments with operational cash flows
-        $cashFlows = [-$initialInvestments]; // Initial investment at period 0
-        $cashFlows = array_merge($cashFlows, $operationalCashFlows); // Then operational cash flows
+        // Create separate arrays for investments and revenues by period
+        $periodInvestmentsByPeriod = [];
+        $periodRevenuesByPeriod = [];
+        
+        // Initialize arrays with zeros
+        for ($i = 0; $i < count($periods); $i++) {
+            $periodInvestmentsByPeriod[$i] = 0;
+            $periodRevenuesByPeriod[$i] = 0;
+        }
+        
+        // Process investment data to get investments by period
+        foreach ($investmentData as $investment) {
+            $investmentDate = $investment['investment_date'];
+            $investmentAmount = floatval($investment['amount']);
+            
+            if ($firstOperationalPeriod && $investmentDate < $firstOperationalPeriod) {
+                // Initial investments are handled separately
+                continue;
+            } else {
+                // Find which period this investment belongs to
+                $periodFound = false;
+                foreach ($periods as $periodIndex => $period) {
+                    if ($investmentDate <= $period) {
+                        $periodInvestmentsByPeriod[$periodIndex] += $investmentAmount;
+                        $periodFound = true;
+                        break;
+                    }
+                }
+                
+                if (!$periodFound) {
+                    // If investment date doesn't match any operational period, add to last period
+                    $lastPeriodIndex = count($periods) - 1;
+                    $periodInvestmentsByPeriod[$lastPeriodIndex] += $investmentAmount;
+                }
+            }
+        }
+        
+        // Add revenues and costs to the revenue array by period
+        foreach ($financialData as $row) {
+            $period = $row['period'];
+            $revenue = floatval($row['total_revenue']);
+            $periodCosts = floatval($row['total_costs']);
+            $netRevenue = $revenue - $periodCosts; // Net revenue after costs
+            
+            $periodIndex = array_search($period, $periods);
+            if ($periodIndex !== false) {
+                $periodRevenuesByPeriod[$periodIndex] = $netRevenue;
+            }
+        }
+        
+        // Create cash flows array that includes initial investment and all operational periods
+        // We'll have initial investment at index 0, followed by cash flows for each operational period
+        $cashFlows = [];
+        
+        // Add initial investments to the first period
+        $cashFlows[] = -$initialInvestments;
+        
+        // Add operational cash flows for each period (including any investments in those periods)
+        foreach ($operationalCashFlows as $flow) {
+            $cashFlows[] = $flow;
+        }
         
         $totalProfit = $totalRevenue - $totalCosts;
         
@@ -535,7 +593,12 @@ class InvestmentAnalysis {
             'irr' => $irr,
             'payback_period' => $paybackPeriod,
             'sensitivity_analysis' => $sensitivityResults,
-            'forecast_scenarios' => $forecastScenarios
+            'forecast_scenarios' => $forecastScenarios,
+            'periods' => $periods,
+            'initial_investments' => $initialInvestments,
+            'operational_cash_flows' => $operationalCashFlows,
+            'period_investments_by_period' => $periodInvestmentsByPeriod,
+            'period_revenues_by_period' => $periodRevenuesByPeriod
         ];
     }
 }
