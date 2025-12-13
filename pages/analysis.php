@@ -57,25 +57,25 @@
         <div class="metrics-grid">
             <div class="metric-card">
                 <h4>ROI (Рентабельность инвестиций)</h4>
-                <p class="metric-value"><?php echo number_format($analysisResults['roi'], 2); ?>%</p>
+                <p class="metric-value" id="roi-value"><?php echo number_format($analysisResults['roi'], 2); ?>%</p>
                 <p class="metric-desc">Доходность на вложенный капитал</p>
             </div>
             
             <div class="metric-card">
                 <h4>NPV (Чистая приведенная стоимость)</h4>
-                <p class="metric-value"><?php echo number_format($analysisResults['npv'], 2, '.', ' '); ?> руб.</p>
+                <p class="metric-value" id="npv-value"><?php echo number_format($analysisResults['npv'], 2, '.', ' '); ?> руб.</p>
                 <p class="metric-desc">Приведенная стоимость будущих денежных потоков</p>
             </div>
             
             <div class="metric-card">
                 <h4>IRR (Внутренняя норма доходности)</h4>
-                <p class="metric-value"><?php echo number_format($analysisResults['irr'] * 100, 2); ?>%</p>
+                <p class="metric-value" id="irr-value"><?php echo number_format($analysisResults['irr'] * 100, 2); ?>%</p>
                 <p class="metric-desc">Ставка дисконтирования, при которой NPV равен 0</p>
             </div>
             
             <div class="metric-card">
                 <h4>Срок окупаемости</h4>
-                <p class="metric-value"><?php 
+                <p class="metric-value" id="payback-value"><?php 
                     if ($analysisResults['payback_period'] > 0) {
                         echo number_format($analysisResults['payback_period'], 2) . ' лет';
                     } else {
@@ -287,4 +287,55 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Dynamic calculation functionality
+function updateMetrics() {
+    const discountRate = document.getElementById('discount_rate').value;
+    const forecastYears = document.getElementById('forecast_years').value;
+    const projectId = <?php echo $projectId; ?>;
+    
+    // Show loading state
+    document.getElementById('roi-value').textContent = 'Расчет...';
+    document.getElementById('npv-value').textContent = 'Расчет...';
+    document.getElementById('irr-value').textContent = 'Расчет...';
+    
+    fetch('../calculate_metrics.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `project_id=${projectId}&discount_rate=${discountRate}&forecast_years=${forecastYears}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('roi-value').textContent = data.roi.toFixed(2) + '%';
+            // Format NPV with space as thousands separator like in PHP
+            document.getElementById('npv-value').textContent = parseFloat(data.npv).toLocaleString('ru-RU', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).replace(/\s/g, ' ') + ' руб.';
+            document.getElementById('irr-value').textContent = (data.irr * 100).toFixed(2) + '%';
+        } else {
+            console.error('Error calculating metrics:', data.error);
+            document.getElementById('roi-value').textContent = 'Ошибка';
+            document.getElementById('npv-value').textContent = 'Ошибка';
+            document.getElementById('irr-value').textContent = 'Ошибка';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('roi-value').textContent = 'Ошибка';
+        document.getElementById('npv-value').textContent = 'Ошибка';
+        document.getElementById('irr-value').textContent = 'Ошибка';
+    });
+}
+
+// Set up event listeners for real-time updates
+document.getElementById('discount_rate').addEventListener('input', updateMetrics);
+document.getElementById('forecast_years').addEventListener('input', updateMetrics);
+
+// Initial setup after page loads
+updateMetrics();
+
 </script>
