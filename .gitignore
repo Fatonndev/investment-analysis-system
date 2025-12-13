@@ -1,1 +1,6 @@
-Nothing should be ignored since the changes only include PHP source files (.php) which are legitimate code files that should be tracked in version control.
+(debug_irr_detailed.php
+test_fixed_irr.php
+test_irr_calculation.php
+test_irr_simple.php
+test_standalone_fixed.php
+includes/calculations.php)

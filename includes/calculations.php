@@ -32,144 +32,43 @@ class InvestmentAnalysis {
         return $npv;
     }
     
-    /**
-     * Calculate IRR (Internal Rate of Return) using multiple methods for better reliability
-     */
-    public function calculateIRR($cashFlows, $precision = 0.0001) {
-        if (count($cashFlows) < 2) {
-            return 0;
-        }
-        
-        $positive = false;
-        $negative = false;
-        
-        foreach ($cashFlows as $cf) {
-            if ($cf > 0) $positive = true;
-            if ($cf < 0) $negative = true;
-        }
-        
-        if (!$positive || !$negative) {
-            return 0; // Cannot calculate IRR if all values are positive or negative
-        }
-        
-        // Try Newton-Raphson method first with multiple initial guesses
-        $initialGuesses = [0.1, 0.2, 0.3, 0.05, 0.5, 0.75, 1.0, 0.01, 0.02, 0.03];
-        
-        foreach ($initialGuesses as $initialGuess) {
-            $irr = $this->calculateIRRNewtonRaphson($cashFlows, $initialGuess, $precision);
-            if ($irr !== null && abs($this->calculateNPVWithRate($cashFlows, $irr)) < 0.1) {
-                return $irr;
-            }
-        }
-        
-        // If Newton-Raphson fails with initial guesses, try bisection method
-        return $this->calculateIRRBisection($cashFlows, $precision);
-    }
     
     /**
-     * Calculate IRR using Newton-Raphson method with a specific initial guess
+     * Calculate NPV with a given discount rate
      */
-    private function calculateIRRNewtonRaphson($cashFlows, $initialGuess, $precision = 0.0001) {
-        $irr = $initialGuess;
-        $maxIterations = 100;
-        $iteration = 0;
-        
-        while ($iteration < $maxIterations) {
-            $npv = $this->calculateNPVWithRate($cashFlows, $irr);
-            
-            // If NPV is close to zero, we found our IRR
-            if (abs($npv) < $precision) {
-                return $irr;
-            }
-            
-            // Calculate derivative of NPV function (for Newton-Raphson method)
-            $npvDerivative = $this->calculateNPVDerivative($cashFlows, $irr);
-            
-            // Avoid division by zero
-            if (abs($npvDerivative) < 1e-10) {
-                break;
-            }
-            
-            // Newton-Raphson update: x_new = x_old - f(x)/f'(x)
-            $newIrr = $irr - ($npv / $npvDerivative);
-            
-            // If the new estimate is too extreme, try a smaller adjustment
-            if ($newIrr <= -1 || $newIrr >= 10) { // Limit to reasonable bounds
-                $newIrr = $irr - 0.01 * ($npv / max(abs($npvDerivative), 0.001));
-            }
-            
-            // Check for convergence
-            if (abs($newIrr - $irr) < $precision) {
-                return $newIrr;
-            }
-            
-            $irr = $newIrr;
-            $iteration++;
-        }
-        
-        return null; // Failed to converge
-    }
-    
     private function calculateNPVWithRate($cashFlows, $rate) {
         $npv = 0;
         for ($i = 0; $i < count($cashFlows); $i++) {
-            // Avoid division by zero when rate is -1
-            if (abs(1 + $rate) < 1e-10) {
-                return PHP_FLOAT_MAX; // Return very large value to indicate invalid rate
+            $denominator = pow(1 + $rate, $i);
+            // Check for numerical errors
+            if (abs($denominator) < 1e-10) {
+                return ($cashFlows[$i] >= 0) ? INF : -INF;
             }
-            $npv += $cashFlows[$i] / pow(1 + $rate, $i);
+            if (abs($denominator) > 1e10) { // Prevent overflow
+                if ($i > 0) $npv += 0; // Effectively 0 contribution
+                continue;
+            }
+            $npv += $cashFlows[$i] / $denominator;
         }
         return $npv;
     }
     
-    private function calculateNPVDerivative($cashFlows, $rate) {
+    /**
+     * Calculate the derivative of NPV function for Newton-Raphson method
+     */
+    private function calculateNPVDerivativeSimple($cashFlows, $rate) {
         $derivative = 0;
         for ($i = 1; $i < count($cashFlows); $i++) {
-            // Derivative of CF[i]/(1+r)^i with respect to r is -i*CF[i]/(1+r)^(i+1)
-            if (abs(1 + $rate) < 1e-10) {
-                return 0; // Avoid division by zero
+            $denominator = pow(1 + $rate, $i + 1);
+            if (abs($denominator) < 1e-10) {
+                continue; // Skip to prevent division by zero
             }
-            $derivative += -$i * $cashFlows[$i] / pow(1 + $rate, $i + 1);
-        }
-        return $derivative;
-    }
-    
-    private function calculateIRRBisection($cashFlows, $precision = 0.0001) {
-        // Extended range for bisection method
-        $r_low = -0.999; // Very close to -100% but not equal
-        $r_high = 10.0;  // Up to 1000%
-        
-        $maxIterations = 1000;
-        $iteration = 0;
-        
-        while (($r_high - $r_low > $precision) && ($iteration < $maxIterations)) {
-            $r_try = ($r_low + $r_high) / 2;
-            $npv = $this->calculateNPVWithRate($cashFlows, $r_try);
-            
-            // If NPV is extremely large, the rate is invalid
-            if (is_infinite($npv) || is_nan($npv)) {
-                $r_high = $r_try;
-                $iteration++;
+            if (abs($denominator) > 1e10) { // Prevent overflow
                 continue;
             }
-            
-            if ($npv > 0) {
-                $r_low = $r_try;
-            } else {
-                $r_high = $r_try;
-            }
-            $iteration++;
+            $derivative += -$i * $cashFlows[$i] / $denominator;
         }
-        
-        $result = ($r_low + $r_high) / 2;
-        
-        // Validate the result by checking if NPV is approximately zero
-        $finalNpv = $this->calculateNPVWithRate($cashFlows, $result);
-        if (abs($finalNpv) > 0.1) { // If NPV is not close to zero, IRR could not be found
-            return 0;
-        }
-        
-        return $result;
+        return $derivative;
     }
     
     /**
@@ -474,6 +373,12 @@ class InvestmentAnalysis {
         // Initialize cash flows with zeros for each operational period
         $operationalCashFlows = array_fill(0, count($periods), 0);
         
+        // Create a mapping of period to investments for that period
+        $periodInvestments = [];
+        foreach ($periods as $period) {
+            $periodInvestments[$period] = 0;
+        }
+        
         // Separate investments that occur before or at the first operational period
         $firstOperationalPeriod = !empty($periods) ? min($periods) : null;
         
@@ -488,22 +393,20 @@ class InvestmentAnalysis {
                 // Investment occurs at the same time as the first operational period, add to initial investments
                 $initialInvestments += $investmentAmount;
             } else {
-                // Investment occurs during or after operational periods, needs to be added to specific period
-                // For now, we'll add it to the first period where investment date <= period date
-                $periodIndex = null;
-                foreach ($periods as $index => $period) {
+                // Investment occurs during operational periods, add to specific period
+                $periodFound = false;
+                foreach ($periods as $period) {
                     if ($investmentDate <= $period) {
-                        $periodIndex = $index;
+                        $periodInvestments[$period] += $investmentAmount;
+                        $periodFound = true;
                         break;
                     }
                 }
                 
-                if ($periodIndex !== null) {
-                    // Adjust cash flow for this period (add negative investment)
-                    $operationalCashFlows[$periodIndex] -= $investmentAmount;
-                } else {
+                if (!$periodFound) {
                     // If investment date doesn't match any operational period, add to last period
-                    $operationalCashFlows[count($periods) - 1] -= $investmentAmount;
+                    $lastPeriod = end($periods);
+                    $periodInvestments[$lastPeriod] += $investmentAmount;
                 }
             }
         }
@@ -518,13 +421,26 @@ class InvestmentAnalysis {
             // Find the index of this period in our sorted periods array
             $periodIndex = array_search($period, $periods);
             if ($periodIndex !== false) {
-                $operationalCashFlows[$periodIndex] += $profit;
+                // Net operating profit with any investments that occurred in this period
+                $operationalCashFlows[$periodIndex] = $profit - $periodInvestments[$period];
+                // Reset the investment amount for this period since it's been accounted for
+                $periodInvestments[$period] = 0;
             }
             
             $totalRevenue += $revenue;
             $totalCosts += $periodCosts;
             $revenues[] = $revenue;
             $costs[] = $periodCosts;
+        }
+        
+        // Add any remaining period investments that didn't align with financial data periods
+        foreach ($periodInvestments as $period => $investmentAmount) {
+            if ($investmentAmount > 0) {
+                $periodIndex = array_search($period, $periods);
+                if ($periodIndex !== false) {
+                    $operationalCashFlows[$periodIndex] -= $investmentAmount;
+                }
+            }
         }
         
         // Combine initial investments with operational cash flows
@@ -536,7 +452,8 @@ class InvestmentAnalysis {
         // Calculate metrics
         $roi = $this->calculateROI($totalProfit, $totalCosts);
         $npv = $this->calculateNPV($cashFlows, 0.1); // Using 10% discount rate
-        $irr = $this->calculateIRR($cashFlows);
+        var_dump($cashFlows);
+        //$irr = $this->calculateIRR($cashFlows);
         $paybackPeriod = $this->calculatePaybackPeriod($cashFlows);
         
         // Break-even analysis
