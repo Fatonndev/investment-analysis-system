@@ -274,7 +274,4 @@
                 }
             }
         });
-</script>
-</div>
-</div>
-</div>
+    </script>
