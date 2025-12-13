@@ -265,6 +265,12 @@ class InvestmentAnalysisDebug {
         // Initialize cash flows with zeros for each operational period
         $operationalCashFlows = array_fill(0, count($periods), 0);
         
+        // Create a mapping of period to investments for that period
+        $periodInvestments = [];
+        foreach ($periods as $period) {
+            $periodInvestments[$period] = 0;
+        }
+        
         // Separate investments that occur before or at the first operational period
         $firstOperationalPeriod = !empty($periods) ? min($periods) : null;
         
@@ -279,22 +285,20 @@ class InvestmentAnalysisDebug {
                 // Investment occurs at the same time as the first operational period, add to initial investments
                 $initialInvestments += $investmentAmount;
             } else {
-                // Investment occurs during or after operational periods, needs to be added to specific period
-                // For now, we'll add it to the first period where investment date <= period date
-                $periodIndex = null;
-                foreach ($periods as $index => $period) {
+                // Investment occurs during operational periods, add to specific period
+                $periodFound = false;
+                foreach ($periods as $period) {
                     if ($investmentDate <= $period) {
-                        $periodIndex = $index;
+                        $periodInvestments[$period] += $investmentAmount;
+                        $periodFound = true;
                         break;
                     }
                 }
                 
-                if ($periodIndex !== null) {
-                    // Adjust cash flow for this period (add negative investment)
-                    $operationalCashFlows[$periodIndex] -= $investmentAmount;
-                } else {
+                if (!$periodFound) {
                     // If investment date doesn't match any operational period, add to last period
-                    $operationalCashFlows[count($periods) - 1] -= $investmentAmount;
+                    $lastPeriod = end($periods);
+                    $periodInvestments[$lastPeriod] += $investmentAmount;
                 }
             }
         }
@@ -309,13 +313,26 @@ class InvestmentAnalysisDebug {
             // Find the index of this period in our sorted periods array
             $periodIndex = array_search($period, $periods);
             if ($periodIndex !== false) {
-                $operationalCashFlows[$periodIndex] += $profit;
+                // Net operating profit with any investments that occurred in this period
+                $operationalCashFlows[$periodIndex] = $profit - $periodInvestments[$period];
+                // Reset the investment amount for this period since it's been accounted for
+                $periodInvestments[$period] = 0;
             }
             
             $totalRevenue += $revenue;
             $totalCosts += $periodCosts;
             $revenues[] = $revenue;
             $costs[] = $periodCosts;
+        }
+        
+        // Add any remaining period investments that didn't align with financial data periods
+        foreach ($periodInvestments as $period => $investmentAmount) {
+            if ($investmentAmount > 0) {
+                $periodIndex = array_search($period, $periods);
+                if ($periodIndex !== false) {
+                    $operationalCashFlows[$periodIndex] -= $investmentAmount;
+                }
+            }
         }
         
         // Combine initial investments with operational cash flows
@@ -354,8 +371,8 @@ class InvestmentAnalysisDebug {
 $db = new Database();
 $analysis = new InvestmentAnalysisDebug();
 
-// Get project ID 2 to test (with better cash flows)
-$projects = $db->fetchAll("SELECT id, name FROM projects WHERE id = 2");
+// Get project ID 1 to test (with better cash flows)
+$projects = $db->fetchAll("SELECT id, name FROM projects WHERE id = 1");
 if (!empty($projects)) {
     $projectId = $projects[0]['id'];
     echo "Testing project ID: $projectId\n";
