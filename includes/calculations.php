@@ -496,11 +496,12 @@ class InvestmentAnalysis {
         }
         
         // Create separate arrays for investments and revenues by period
+        // Extend to cover the full forecast horizon
         $periodInvestmentsByPeriod = [];
         $periodRevenuesByPeriod = [];
         
-        // Initialize arrays with zeros
-        for ($i = 0; $i < count($periods); $i++) {
+        // Initialize arrays with zeros for the full forecast horizon
+        for ($i = 0; $i < $forecastYears; $i++) {
             $periodInvestmentsByPeriod[$i] = 0;
             $periodRevenuesByPeriod[$i] = 0;
         }
@@ -518,7 +519,9 @@ class InvestmentAnalysis {
                 $periodFound = false;
                 foreach ($periods as $periodIndex => $period) {
                     if ($investmentDate <= $period) {
-                        $periodInvestmentsByPeriod[$periodIndex] += $investmentAmount;
+                        // Map to forecast horizon if needed
+                        $mappedIndex = min($periodIndex, $forecastYears - 1);
+                        $periodInvestmentsByPeriod[$mappedIndex] += $investmentAmount;
                         $periodFound = true;
                         break;
                     }
@@ -526,7 +529,7 @@ class InvestmentAnalysis {
                 
                 if (!$periodFound) {
                     // If investment date doesn't match any operational period, add to last period
-                    $lastPeriodIndex = count($periods) - 1;
+                    $lastPeriodIndex = min(count($periods) - 1, $forecastYears - 1);
                     $periodInvestmentsByPeriod[$lastPeriodIndex] += $investmentAmount;
                 }
             }
@@ -541,7 +544,22 @@ class InvestmentAnalysis {
             
             $periodIndex = array_search($period, $periods);
             if ($periodIndex !== false) {
-                $periodRevenuesByPeriod[$periodIndex] = $netRevenue;
+                // Map to forecast horizon if needed
+                $mappedIndex = min($periodIndex, $forecastYears - 1);
+                $periodRevenuesByPeriod[$mappedIndex] = $netRevenue;
+            }
+        }
+        
+        // If we have fewer periods than forecast years, extend with projected values
+        if (count($periods) < $forecastYears) {
+            // Calculate average revenue and cost per period from existing data
+            $avgRevenue = count($revenues) > 0 ? array_sum($revenues) / count($revenues) : 0;
+            $avgCost = count($costs) > 0 ? array_sum($costs) / count($costs) : 0;
+            $avgNetRevenue = $avgRevenue - $avgCost;
+            
+            // Fill remaining periods with projected values
+            for ($i = count($periods); $i < $forecastYears; $i++) {
+                $periodRevenuesByPeriod[$i] = $avgNetRevenue;
             }
         }
         
@@ -552,15 +570,38 @@ class InvestmentAnalysis {
         // Add initial investments to the first period
         $cashFlows[] = -$initialInvestments;
         
-        // Add operational cash flows for each period (including any investments in those periods)
-        foreach ($operationalCashFlows as $flow) {
-            $cashFlows[] = $flow;
+        // Add operational cash flows for each period up to the forecast horizon (including any investments in those periods)
+        for ($i = 0; $i < $forecastYears; $i++) {
+            if ($i < count($operationalCashFlows)) {
+                // Use actual operational cash flow if available
+                $cashFlows[] = $operationalCashFlows[$i];
+            } else {
+                // Use projected cash flow based on average if we exceed actual data
+                $avgRevenue = count($revenues) > 0 ? array_sum($revenues) / count($revenues) : 0;
+                $avgCost = count($costs) > 0 ? array_sum($costs) / count($costs) : 0;
+                $avgNetRevenue = $avgRevenue - $avgCost;
+                $cashFlows[] = $avgNetRevenue;
+            }
         }
         
-        $totalProfit = $totalRevenue - $totalCosts;
+        // Calculate total profit based on forecast horizon
+        $projectedTotalRevenue = $totalRevenue;
+        $projectedTotalCosts = $totalCosts;
+        
+        // Add projected revenue and costs for remaining forecast years
+        if (count($periods) < $forecastYears) {
+            $avgRevenue = count($revenues) > 0 ? array_sum($revenues) / count($revenues) : 0;
+            $avgCost = count($costs) > 0 ? array_sum($costs) / count($costs) : 0;
+            
+            $remainingPeriods = $forecastYears - count($periods);
+            $projectedTotalRevenue += $avgRevenue * $remainingPeriods;
+            $projectedTotalCosts += $avgCost * $remainingPeriods;
+        }
+        
+        $totalProfit = $projectedTotalRevenue - $projectedTotalCosts;
         
         // Calculate metrics
-        $roi = $this->calculateROI($totalProfit, $totalCosts);
+        $roi = $this->calculateROI($totalProfit, $projectedTotalCosts);
         $npv = $this->calculateNPV($cashFlows, $discountRate); // Use the passed discount rate
         $irr = $this->calculateIRR($cashFlows);
         $paybackPeriod = $this->calculatePaybackPeriod($cashFlows);
@@ -581,10 +622,16 @@ class InvestmentAnalysis {
         // Forecasting
         $forecastScenarios = $this->generateForecastScenarios($revenues, $forecastYears);
         
+        // Create period labels for the forecast horizon
+        $forecastPeriods = [];
+        for ($i = 1; $i <= $forecastYears; $i++) {
+            $forecastPeriods[] = $i;
+        }
+
         return [
             'cash_flows' => $cashFlows,
-            'total_revenue' => $totalRevenue,
-            'total_costs' => $totalCosts,
+            'total_revenue' => $projectedTotalRevenue,
+            'total_costs' => $projectedTotalCosts,
             'total_profit' => $totalProfit,
             'total_investment' => $totalInvestment,
             'roi' => $roi,
@@ -593,7 +640,7 @@ class InvestmentAnalysis {
             'payback_period' => $paybackPeriod,
             'sensitivity_analysis' => $sensitivityResults,
             'forecast_scenarios' => $forecastScenarios,
-            'periods' => $periods,
+            'periods' => $forecastPeriods,  // Updated to reflect forecast horizon
             'initial_investments' => $initialInvestments,
             'operational_cash_flows' => $operationalCashFlows,
             'period_investments_by_period' => $periodInvestmentsByPeriod,
