@@ -639,7 +639,7 @@ class InvestmentAnalysis {
 
         // Process revenue data
         foreach ($financialData as $row) {
-            $period = $row['period'];
+            $period = intval($row['period']); // Ensure it's an integer
             $revenue = floatval($row['total_revenue']);
             $periodCosts = floatval($row['total_costs']);
             $netRevenue = $revenue - $periodCosts; // Net revenue after costs
@@ -662,10 +662,22 @@ class InvestmentAnalysis {
                 // Initial investments are handled separately
                 continue;
             } else {
-                // Map investment date to month
-                // Assuming investment_date represents year (for now we'll map to first month of that year)
-                $investmentYear = $investmentDate;
-                $monthIndex = ($investmentYear - 1) * 12; // Assuming period starts from 1
+                // Convert investment_date (format YYYY-MM-DD) to month index
+                // We'll use the year part of the date to determine the period
+                $dateComponents = explode('-', $investmentDate);
+                $investmentYear = intval($dateComponents[0]); // Extract year as integer
+                
+                // Determine the starting year for the forecast based on first operational period
+                // This assumes firstOperationalPeriod represents the first year of operations
+                $startYear = date('Y'); // Using current year as baseline
+                
+                // Calculate relative year within the forecast period
+                $relativeYear = max(1, $investmentYear - $startYear + 1);
+                
+                // Make sure relativeYear doesn't exceed forecastYears to avoid out-of-bounds error
+                $relativeYear = min($relativeYear, $forecastYears);
+                
+                $monthIndex = ($relativeYear - 1) * 12; // Map to first month of that year
                 if ($monthIndex < $monthsCount) {
                     $monthlyInvestments[$monthIndex] += $investmentAmount;
                 }
