@@ -179,24 +179,31 @@
 // Cash flow chart
 document.addEventListener('DOMContentLoaded', function() {
     const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
-    const cashFlows = <?php echo json_encode($analysisResults['cash_flows']); ?>;
     
-    // Prepare data for chart - separate investments and revenues
+    // Prepare data for chart - separate investments and revenues by period
     const labels = [];
     const investmentData = []; // For negative values (investments)
     const revenueData = []; // For positive values (revenues)
     
-    // Process all cash flows by period
-    for (let i = 0; i < cashFlows.length; i++) {
-        labels.push('Месяц ' + (i + 1));
-        if (cashFlows[i] < 0) {
-            investmentData.push(cashFlows[i]); // Negative values (investments/expenses)
-            revenueData.push(0);
-        } else {
-            investmentData.push(0);
-            revenueData.push(cashFlows[i]); // Positive values (incomes/revenues)
-        }
+    // Get more detailed data from analysis results
+    const periodInvestments = <?php echo json_encode($analysisResults['period_investments_by_period']); ?>;
+    const periodRevenues = <?php echo json_encode($analysisResults['period_revenues_by_period']); ?>;
+    const periods = <?php echo json_encode($analysisResults['periods']); ?>;
+    
+    // Process all periods with their respective investments and revenues
+    for (let i = 0; i < periodInvestments.length; i++) {
+        // Use period number from the database or just incrementing month number
+        labels.push(periods[i] ? 'Период ' + periods[i] : 'Месяц ' + (i + 1));
+        
+        // Add investments as negative values (for red bars going down)
+        investmentData.push(-Math.abs(periodInvestments[i])); // Make sure it's negative
+        
+        // Add revenues as positive values (for green bars going up)
+        revenueData.push(Math.max(0, periodRevenues[i]));
     }
+    
+    // Don't include initial investments separately - distribute them by months as requested
+    // according to the user's requirement to show monthly investments from database
     
     new Chart(ctx1, {
         type: 'bar',
