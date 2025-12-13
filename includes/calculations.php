@@ -628,6 +628,63 @@ class InvestmentAnalysis {
             $forecastPeriods[] = $i;
         }
 
+        // Calculate monthly data for chart
+        $monthsCount = $forecastYears * 12;
+        $periodInvestmentsByMonth = array_fill(0, $monthsCount, 0);
+        $periodRevenuesByMonth = array_fill(0, $monthsCount, 0);
+
+        // Distribute annual data evenly across months
+        $monthlyRevenues = array_fill(0, $monthsCount, 0);
+        $monthlyInvestments = array_fill(0, $monthsCount, 0);
+
+        // Process revenue data
+        foreach ($financialData as $row) {
+            $period = $row['period'];
+            $revenue = floatval($row['total_revenue']);
+            $periodCosts = floatval($row['total_costs']);
+            $netRevenue = $revenue - $periodCosts; // Net revenue after costs
+
+            // Map annual period to monthly periods
+            $startMonth = ($period - 1) * 12; // Assuming period starts from 1
+            $endMonth = min($startMonth + 12, $monthsCount);
+
+            for ($m = $startMonth; $m < $endMonth; $m++) {
+                $monthlyRevenues[$m] = $netRevenue / 12; // Distribute evenly over 12 months
+            }
+        }
+
+        // Process investment data
+        foreach ($investmentData as $investment) {
+            $investmentDate = $investment['investment_date'];
+            $investmentAmount = floatval($investment['amount']);
+
+            if ($firstOperationalPeriod && $investmentDate < $firstOperationalPeriod) {
+                // Initial investments are handled separately
+                continue;
+            } else {
+                // Map investment date to month
+                // Assuming investment_date represents year (for now we'll map to first month of that year)
+                $investmentYear = $investmentDate;
+                $monthIndex = ($investmentYear - 1) * 12; // Assuming period starts from 1
+                if ($monthIndex < $monthsCount) {
+                    $monthlyInvestments[$monthIndex] += $investmentAmount;
+                }
+            }
+        }
+
+        // Combine monthly revenues and investments
+        for ($m = 0; $m < $monthsCount; $m++) {
+            $periodRevenuesByMonth[$m] = $monthlyRevenues[$m] - $monthlyInvestments[$m];
+        }
+
+        // Create monthly period labels for the forecast horizon
+        $forecastMonths = [];
+        for ($i = 1; $i <= $monthsCount; $i++) {
+            $year = floor(($i - 1) / 12) + 1;
+            $month = (($i - 1) % 12) + 1;
+            $forecastMonths[] = $year . '.' . str_pad($month, 2, '0', STR_PAD_LEFT);
+        }
+
         return [
             'cash_flows' => $cashFlows,
             'total_revenue' => $projectedTotalRevenue,
@@ -640,11 +697,12 @@ class InvestmentAnalysis {
             'payback_period' => $paybackPeriod,
             'sensitivity_analysis' => $sensitivityResults,
             'forecast_scenarios' => $forecastScenarios,
-            'periods' => $forecastPeriods,  // Updated to reflect forecast horizon
+            'periods' => $forecastMonths,  // Monthly periods for the forecast horizon
             'initial_investments' => $initialInvestments,
             'operational_cash_flows' => $operationalCashFlows,
-            'period_investments_by_period' => $periodInvestmentsByPeriod,
-            'period_revenues_by_period' => $periodRevenuesByPeriod
+            'period_investments_by_period' => $periodInvestmentsByMonth, // Monthly investments
+            'period_revenues_by_period' => $periodRevenuesByMonth, // Monthly net revenues
+            'months_count' => $monthsCount // Total number of months for reference
         ];
     }
 }
