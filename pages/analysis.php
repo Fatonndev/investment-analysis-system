@@ -175,106 +175,100 @@
     </div>
 </div>
 
-    <script>
-    // Cash flow chart
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
-        const cashFlows = <?php echo json_encode($analysisResults['cash_flows']); ?>;
-        const periods = <?php echo json_encode($analysisResults['periods']); ?>;
-        const initialInvestments = <?php echo json_encode($analysisResults['initial_investments']); ?>;
-        const operationalCashFlows = <?php echo json_encode($analysisResults['operational_cash_flows']); ?>;
-        const periodInvestmentsByPeriod = <?php echo json_encode($analysisResults['period_investments_by_period']); ?>;
-        const periodRevenuesByPeriod = <?php echo json_encode($analysisResults['period_revenues_by_period']); ?>;
-        
-        // Prepare data for chart - separate investments and revenues
-        const labels = ['Инвестиции'];
-        const investmentData = [<?php echo -$analysisResults['initial_investments']; ?>]; // Initial investments
-        const revenueData = [0]; // No revenue in initial period
-        
-        // Process period-specific investments and revenues
-        for (let i = 0; i < periodInvestmentsByPeriod.length; i++) {
-            labels.push('Месяц ' + (i + 1));
-            
-            // Add period-specific investments (always negative)
-            investmentData.push(-periodInvestmentsByPeriod[i]);
-            
-            // Add period-specific revenues (could be positive or negative after costs)
-            revenueData.push(periodRevenuesByPeriod[i]);
+<script>
+// Cash flow chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
+    const cashFlows = <?php echo json_encode($analysisResults['cash_flows']); ?>;
+    
+    // Prepare data for chart - separate investments and revenues
+    const labels = [];
+    const investmentData = []; // For negative values (investments)
+    const revenueData = []; // For positive values (revenues)
+    
+    // Process all cash flows by period
+    for (let i = 0; i < cashFlows.length; i++) {
+        labels.push('Месяц ' + (i + 1));
+        if (cashFlows[i] < 0) {
+            investmentData.push(cashFlows[i]); // Negative values (investments/expenses)
+            revenueData.push(0);
+        } else {
+            investmentData.push(0);
+            revenueData.push(cashFlows[i]); // Positive values (incomes/revenues)
         }
-        
-        new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Доходы (руб.)',
-                        data: revenueData,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Инвестиции (руб.)',
-                        data: investmentData,
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: false  // Allow negative values
-                    }
+    }
+    
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Доходы (руб.)',
+                    data: revenueData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Инвестиции (руб.)',
+                    data: investmentData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
-        });
-        
-        // Forecast chart
-        const ctx2 = document.getElementById('forecastChart').getContext('2d');
-        const forecastScenarios = <?php echo json_encode($analysisResults['forecast_scenarios']); ?>;
-        
-        new Chart(ctx2, {
-            type: 'line',
-            data: {
-                labels: ['Год 1', 'Год 2', 'Год 3'],
-                datasets: [
-                    {
-                        label: 'Оптимистичный сценарий',
-                        data: forecastScenarios.optimistic,
-                        borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Базовый сценарий',
-                        data: forecastScenarios.base,
-                        borderColor: 'rgb(54, 162, 235)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Пессимистичный сценарий',
-                        data: forecastScenarios.pessimistic,
-                        borderColor: 'rgb(255, 99, 132)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        tension: 0.1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+        }
+    });
+    
+    // Forecast chart
+    const ctx2 = document.getElementById('forecastChart').getContext('2d');
+    const forecastScenarios = <?php echo json_encode($analysisResults['forecast_scenarios']); ?>;
+    
+    new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: ['Год 1', 'Год 2', 'Год 3'],
+            datasets: [
+                {
+                    label: 'Оптимистичный сценарий',
+                    data: forecastScenarios.optimistic,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Базовый сценарий',
+                    data: forecastScenarios.base,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Пессимистичный сценарий',
+                    data: forecastScenarios.pessimistic,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
-        });
+        }
+    });
+});
 </script>
-</div>
-</div>
-</div>
