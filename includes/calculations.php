@@ -637,26 +637,53 @@ class InvestmentAnalysis {
         $monthlyRevenues = array_fill(0, $monthsCount, 0);
         $monthlyInvestments = array_fill(0, $monthsCount, 0);
 
+        // Calculate the minimum year in the financial data to establish a baseline
+        $allYears = [];
+        foreach ($financialData as $fd_row) {
+            $period = $fd_row['period'];
+            if (strpos($period, '-') !== false) {
+                $fd_components = explode('-', $fd_row['period']);
+                $allYears[] = intval($fd_components[0]);
+            }
+        }
+        $minYear = !empty($allYears) ? min($allYears) : date('Y');
+
         // Process revenue data
         foreach ($financialData as $row) {
-            $period = $row['period']; // Keep period as string like "1.01", "1.02", etc.
+            $period = $row['period']; // This could be a date string like 'YYYY-MM-DD' or a formatted period like '1.01'
             $revenue = floatval($row['total_revenue']);
             $periodCosts = floatval($row['total_costs']);
             $netRevenue = $revenue - $periodCosts; // Net revenue after costs
 
-            // Parse the period string (e.g., "1.01" -> year 1, month 1)
-            $periodParts = explode('.', $period);
-            if (count($periodParts) == 2) {
-                $periodYear = intval($periodParts[0]);
-                $periodMonth = intval($periodParts[1]);
+            // Check if the period is in date format (YYYY-MM-DD) or period format (X.YY)
+            if (strpos($period, '-') !== false) {
+                // Date format like '2023-01-01'
+                $dateComponents = explode('-', $period); // Format: YYYY-MM-DD
+                $periodYear = intval($dateComponents[0]);
+                $periodMonth = intval($dateComponents[1]);
                 
                 // Map to the corresponding month index in our forecast (0-based)
-                $monthIndex = ($periodYear - 1) * 12 + ($periodMonth - 1);
-                
-                // Only assign if within bounds
-                if ($monthIndex < $monthsCount) {
-                    $monthlyRevenues[$monthIndex] = $netRevenue; // Assign to specific month
+                // Calculate relative to the first year in the financial data
+                $relativeYear = $periodYear - $minYear + 1;
+                $monthIndex = ($relativeYear - 1) * 12 + ($periodMonth - 1);
+            } else {
+                // Period format like "1.01" -> year 1, month 1
+                $periodParts = explode('.', $period);
+                if (count($periodParts) == 2) {
+                    $periodYear = intval($periodParts[0]);
+                    $periodMonth = intval($periodParts[1]);
+                    
+                    // Map to the corresponding month index in our forecast (0-based)
+                    $monthIndex = ($periodYear - 1) * 12 + ($periodMonth - 1);
+                } else {
+                    // If format is unexpected, default to first month
+                    $monthIndex = 0;
                 }
+            }
+            
+            // Only assign if within bounds
+            if (isset($monthIndex) && $monthIndex < $monthsCount) {
+                $monthlyRevenues[$monthIndex] = $netRevenue; // Assign to specific month
             }
         }
 
@@ -669,15 +696,15 @@ class InvestmentAnalysis {
                 // Initial investments - place at the beginning of the forecast
                 $monthlyInvestments[0] += $investmentAmount;
             } else {
-                // Find which period this investment belongs to based on date
                 // Parse the investment date to determine the target month
                 $dateComponents = explode('-', $investmentDate); // Format: YYYY-MM-DD
                 $investmentYear = intval($dateComponents[0]);
                 $investmentMonth = intval($dateComponents[1]);
                 
                 // Calculate the corresponding month index in our forecast
-                // Assuming the forecast starts from year 1, month 1
-                $monthIndex = ($investmentYear - 1) * 12 + ($investmentMonth - 1);
+                // Calculate relative to the first year in the financial data
+                $relativeYear = $investmentYear - $minYear + 1;
+                $monthIndex = ($relativeYear - 1) * 12 + ($investmentMonth - 1);
                 
                 // Make sure the month index is within bounds
                 if ($monthIndex >= 0 && $monthIndex < $monthsCount) {
