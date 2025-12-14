@@ -148,7 +148,7 @@
         
         <!-- Forecast Scenarios -->
         <div class="forecast-scenarios">
-            <h4>Прогнозные сценарии (на <?php echo $forecastYears; ?> года)</h4>
+            <h4>Прогнозные сценарии (на <?php echo $forecastYears; ?> г.)</h4>
             <div class="chart-container">
                 <canvas id="forecastChart" width="400" height="200"></canvas>
             </div>
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
             responsive: true,
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: false
                 }
             }
         }
