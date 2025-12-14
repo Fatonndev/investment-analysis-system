@@ -639,17 +639,24 @@ class InvestmentAnalysis {
 
         // Process revenue data
         foreach ($financialData as $row) {
-            $period = intval($row['period']); // Ensure it's an integer
+            $period = $row['period']; // Keep period as string like "1.01", "1.02", etc.
             $revenue = floatval($row['total_revenue']);
             $periodCosts = floatval($row['total_costs']);
             $netRevenue = $revenue - $periodCosts; // Net revenue after costs
 
-            // Map annual period to monthly periods
-            $startMonth = ($period - 1) * 12; // Assuming period starts from 1
-            $endMonth = min($startMonth + 12, $monthsCount);
-
-            for ($m = $startMonth; $m < $endMonth; $m++) {
-                $monthlyRevenues[$m] = $netRevenue / 12; // Distribute evenly over 12 months
+            // Parse the period string (e.g., "1.01" -> year 1, month 1)
+            $periodParts = explode('.', $period);
+            if (count($periodParts) == 2) {
+                $periodYear = intval($periodParts[0]);
+                $periodMonth = intval($periodParts[1]);
+                
+                // Map to the corresponding month index in our forecast (0-based)
+                $monthIndex = ($periodYear - 1) * 12 + ($periodMonth - 1);
+                
+                // Only assign if within bounds
+                if ($monthIndex < $monthsCount) {
+                    $monthlyRevenues[$monthIndex] = $netRevenue; // Assign to specific month
+                }
             }
         }
 
@@ -659,34 +666,36 @@ class InvestmentAnalysis {
             $investmentAmount = floatval($investment['amount']);
 
             if ($firstOperationalPeriod && $investmentDate < $firstOperationalPeriod) {
-                // Initial investments are handled separately
-                continue;
+                // Initial investments - place at the beginning of the forecast
+                $monthlyInvestments[0] += $investmentAmount;
             } else {
-                // Convert investment_date (format YYYY-MM-DD) to month index
-                // We'll use the year part of the date to determine the period
-                $dateComponents = explode('-', $investmentDate);
-                $investmentYear = intval($dateComponents[0]); // Extract year as integer
+                // Find which period this investment belongs to based on date
+                // Parse the investment date to determine the target month
+                $dateComponents = explode('-', $investmentDate); // Format: YYYY-MM-DD
+                $investmentYear = intval($dateComponents[0]);
+                $investmentMonth = intval($dateComponents[1]);
                 
-                // Determine the starting year for the forecast based on first operational period
-                // This assumes firstOperationalPeriod represents the first year of operations
-                $startYear = date('Y'); // Using current year as baseline
+                // Calculate the corresponding month index in our forecast
+                // Assuming the forecast starts from year 1, month 1
+                $monthIndex = ($investmentYear - 1) * 12 + ($investmentMonth - 1);
                 
-                // Calculate relative year within the forecast period
-                $relativeYear = max(1, $investmentYear - $startYear + 1);
-                
-                // Make sure relativeYear doesn't exceed forecastYears to avoid out-of-bounds error
-                $relativeYear = min($relativeYear, $forecastYears);
-                
-                $monthIndex = ($relativeYear - 1) * 12; // Map to first month of that year
-                if ($monthIndex < $monthsCount) {
+                // Make sure the month index is within bounds
+                if ($monthIndex >= 0 && $monthIndex < $monthsCount) {
                     $monthlyInvestments[$monthIndex] += $investmentAmount;
+                } else if ($monthIndex >= $monthsCount && $monthsCount > 0) {
+                    // If beyond forecast, put in last month
+                    $monthlyInvestments[$monthsCount - 1] += $investmentAmount;
+                } else if ($monthIndex < 0) {
+                    // If before forecast, put in first month
+                    $monthlyInvestments[0] += $investmentAmount;
                 }
             }
         }
 
-        // Combine monthly revenues and investments
+        // Assign monthly revenues and investments to separate arrays
         for ($m = 0; $m < $monthsCount; $m++) {
-            $periodRevenuesByMonth[$m] = $monthlyRevenues[$m] - $monthlyInvestments[$m];
+            $periodRevenuesByMonth[$m] = $monthlyRevenues[$m];
+            $periodInvestmentsByMonth[$m] = $monthlyInvestments[$m];
         }
 
         // Create monthly period labels for the forecast horizon
