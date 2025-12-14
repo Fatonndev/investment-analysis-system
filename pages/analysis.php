@@ -247,13 +247,12 @@ function loadCashFlowChart(projectId, discountRate, forecastYears) {
     // Show loading indicator
     document.getElementById('chart-loading').style.display = 'block';
     
-    // Fetch data from external PHP file
-    fetch('get_cashflow_data.php', {
-        method: 'POST',
+    // Fetch data from external PHP file using GET with query parameters
+    fetch(`get_cashflow_data.php?project_id=${projectId}&discount_rate=${discountRate}&forecast_years=${forecastYears}`, {
+        method: 'GET',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `project_id=${projectId}&discount_rate=${discountRate}&forecast_years=${forecastYears}`
+            'Content-Type': 'application/json',
+        }
     })
     .then(response => response.json())
     .then(data => {
