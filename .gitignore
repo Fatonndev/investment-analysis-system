@@ -1,25 +1,4 @@
 ```
-# Database files
-*.db
-app.db
-
-# PHP related
-*.php~
+# Backup files
 *.php.bak
-*.log
-
-# Environment files
-.env
-.env.local
-*.env.*
-
-# Editor/IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# Logs
-*.log
 ```

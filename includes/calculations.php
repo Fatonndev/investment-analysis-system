@@ -141,12 +141,6 @@ class InvestmentAnalysis {
                 }
             }
             
-            // Check if derivative is too close to zero to avoid division by zero
-            if (abs($derivative) < $precision) {
-                // If derivative is close to zero, return current guess
-                return $irr;
-            }
-            
             // Newton-Raphson method: new_guess = old_guess - f(x)/f'(x)
             $newIrr = $irr - $npv / $derivative;
             
@@ -645,32 +639,24 @@ class InvestmentAnalysis {
 
         // Process revenue data
         foreach ($financialData as $row) {
-            $period = $row['period']; // This is a date in format YYYY-MM-DD
+            $period = $row['period']; // Keep period as string like "1.01", "1.02", etc.
             $revenue = floatval($row['total_revenue']);
             $periodCosts = floatval($row['total_costs']);
             $netRevenue = $revenue - $periodCosts; // Net revenue after costs
 
-            // Parse the period string (now in format YYYY-MM-DD)
-            $periodDate = new DateTime($period);
-            $periodYear = $periodDate->format('Y');
-            $periodMonth = $periodDate->format('m');
-            
-            // Map to the corresponding month index in our forecast (0-based)
-            // Assuming the forecast starts from year 1, month 1
-            // Convert to relative month number: (year-1)*12 + (month-1)
-            $relativeYear = intval($periodYear) - 2023 + 1; // Adjust to start from year 1
-            $relativeMonth = intval($periodMonth);
-            $monthIndex = ($relativeYear - 1) * 12 + ($relativeMonth - 1);
-            
-            // Only assign if within bounds
-            if ($monthIndex >= 0 && $monthIndex < $monthsCount) {
-                $monthlyRevenues[$monthIndex] = $netRevenue; // Assign to specific month
-            } else if ($monthIndex >= $monthsCount && $monthsCount > 0) {
-                // If beyond forecast, put in last month
-                $monthlyRevenues[$monthsCount - 1] = $netRevenue;
-            } else if ($monthIndex < 0) {
-                // If before forecast, put in first month
-                $monthlyRevenues[0] = $netRevenue;
+            // Parse the period string (e.g., "1.01" -> year 1, month 1)
+            $periodParts = explode('.', $period);
+            if (count($periodParts) == 2) {
+                $periodYear = intval($periodParts[0]);
+                $periodMonth = intval($periodParts[1]);
+                
+                // Map to the corresponding month index in our forecast (0-based)
+                $monthIndex = ($periodYear - 1) * 12 + ($periodMonth - 1);
+                
+                // Only assign if within bounds
+                if ($monthIndex < $monthsCount) {
+                    $monthlyRevenues[$monthIndex] = $netRevenue; // Assign to specific month
+                }
             }
         }
 
@@ -685,15 +671,13 @@ class InvestmentAnalysis {
             } else {
                 // Find which period this investment belongs to based on date
                 // Parse the investment date to determine the target month
-                $investmentDateObj = new DateTime($investmentDate);
-                $investmentYear = $investmentDateObj->format('Y');
-                $investmentMonth = $investmentDateObj->format('m');
+                $dateComponents = explode('-', $investmentDate); // Format: YYYY-MM-DD
+                $investmentYear = intval($dateComponents[0]);
+                $investmentMonth = intval($dateComponents[1]);
                 
                 // Calculate the corresponding month index in our forecast
-                // Adjust to start from year 1, month 1 (based on 2023)
-                $relativeYear = intval($investmentYear) - 2023 + 1;
-                $relativeMonth = intval($investmentMonth);
-                $monthIndex = ($relativeYear - 1) * 12 + ($relativeMonth - 1);
+                // Assuming the forecast starts from year 1, month 1
+                $monthIndex = ($investmentYear - 1) * 12 + ($investmentMonth - 1);
                 
                 // Make sure the month index is within bounds
                 if ($monthIndex >= 0 && $monthIndex < $monthsCount) {
@@ -721,19 +705,6 @@ class InvestmentAnalysis {
             $month = (($i - 1) % 12) + 1;
             $forecastMonths[] = $year . '.' . str_pad($month, 2, '0', STR_PAD_LEFT);
         }
-        
-        // Create human-readable labels for the chart
-        $readableLabels = [];
-        for ($i = 1; $i <= $monthsCount; $i++) {
-            $year = floor(($i - 1) / 12) + 1;
-            $month = (($i - 1) % 12) + 1;
-            
-            // Convert to actual year based on the start year of 2023
-            $actualYear = 2023 + $year - 1;
-            $actualMonth = $month;
-            
-            $readableLabels[] = $actualYear . '-' . str_pad($actualMonth, 2, '0', STR_PAD_LEFT);
-        }
 
         return [
             'cash_flows' => $cashFlows,
@@ -747,7 +718,7 @@ class InvestmentAnalysis {
             'payback_period' => $paybackPeriod,
             'sensitivity_analysis' => $sensitivityResults,
             'forecast_scenarios' => $forecastScenarios,
-            'periods' => $readableLabels,  // Use readable labels for the forecast horizon
+            'periods' => $forecastMonths,  // Monthly periods for the forecast horizon
             'initial_investments' => $initialInvestments,
             'operational_cash_flows' => $operationalCashFlows,
             'period_investments_by_period' => $periodInvestmentsByMonth, // Monthly investments
