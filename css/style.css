@@ -101,6 +101,27 @@ h4 {
     color: #3498db;
 }
 
+.settings-card {
+    background-color: #d6eaf8;
+}
+
+.settings-card form {
+    flex-wrap: wrap;
+}
+
+.settings-card label {
+    font-size: 0.9rem;
+    margin-right: 5px;
+}
+
+.settings-card input[type="number"] {
+    margin-right: 10px;
+}
+
+.settings-card button {
+    margin-top: 1px;
+}
+
 .dashboard-content {
     display: grid;
     grid-template-columns: 1fr 1fr;

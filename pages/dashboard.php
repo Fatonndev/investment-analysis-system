@@ -20,7 +20,25 @@
         
         <div class="stat-card">
             <h3>Средняя рентабельность</h3>
-            <p class='stat-number'>-</p>
+            <?php
+            $discountRate = isset($_GET['discount_rate']) ? floatval($_GET['discount_rate']) : 0.1;
+            $forecastYears = isset($_GET['forecast_years']) ? intval($_GET['forecast_years']) : 3;
+            $avgProfitability = $analysis->calculateAverageProfitability($discountRate, $forecastYears);
+            $avgProfitabilityFormatted = is_numeric($avgProfitability) ? round($avgProfitability, 2) : 0;
+            echo "<p class='stat-number'>$avgProfitabilityFormatted%</p>";
+            ?>
+        </div>
+        
+        <div class="stat-card settings-card">
+            <h3>Параметры расчета</h3>
+            <form method="GET" style="display: flex; gap: 10px; align-items: center;">
+                <input type="hidden" name="action" value="dashboard">
+                <label for="discount_rate">Ставка:</label>
+                <input type="number" step="0.01" min="0" name="discount_rate" value="<?php echo $discountRate; ?>" style="width: 80px; padding: 3px;">
+                <label for="forecast_years">Лет:</label>
+                <input type="number" min="1" name="forecast_years" value="<?php echo $forecastYears; ?>" style="width: 60px; padding: 3px;">
+                <button type="submit" style="padding: 3px 8px; font-size: 0.9em;">Обновить</button>
+            </form>
         </div>
     </div>
     
