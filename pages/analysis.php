@@ -320,8 +320,6 @@ function updateMetrics() {
             }).replace(/\s/g, ' ') + ' руб.';
             document.getElementById('irr-value').textContent = (data.irr * 100).toFixed(2) + '%';
             
-            // Update cash flow chart with new parameters
-            updateCashFlowChart(discountRate, forecastYears, projectId);
         } else {
             console.error('Error calculating metrics:', data.error);
             document.getElementById('roi-value').textContent = 'Ошибка';
@@ -337,89 +335,7 @@ function updateMetrics() {
     });
 }
 
-// Function to update cash flow chart
-function updateCashFlowChart(discountRate, forecastYears, projectId) {
-    // Fetch updated chart data
-    fetch('get_chart_data.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `project_id=${projectId}&discount_rate=${discountRate}&forecast_years=${forecastYears}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Get the chart instance and update it
-            const ctx = document.getElementById('cashFlowChart').getContext('2d');
-            
-            // Destroy existing chart instance if it exists
-            if (window.cashFlowChartInstance) {
-                window.cashFlowChartInstance.destroy();
-            }
-            
-            // Prepare data for chart - separate investments and revenues by period
-            const labels = [];
-            const investmentData = []; // For negative values (investments)
-            const revenueData = []; // For positive values (revenues)
-            
-            const periodInvestments = data.period_investments_by_period;
-            const periodRevenues = data.period_revenues_by_period;
-            const periods = data.periods;
-            
-            // Process all periods with their respective investments and revenues
-            for (let i = 0; i < Math.max(periodInvestments.length, forecastYears * 12); i++) {
-                // Use period number from the database or just incrementing year number
-                labels.push(periods[i] ? 'Месяц ' + periods[i] : 'Месяц ' + (i + 1));
-                
-                // Add investments as negative values (for red bars going down)
-                const investmentValue = i < periodInvestments.length ? periodInvestments[i] : 0;
-                investmentData.push(-Math.abs(investmentValue)); // Make sure it's negative
-                
-                // Add revenues as positive values (for green bars going up)
-                const revenueValue = i < periodRevenues.length ? periodRevenues[i] : 0;
-                revenueData.push(Math.max(0, revenueValue));
-            }
-            
-            // Create new chart
-            window.cashFlowChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Доходы (руб.)',
-                            data: revenueData,
-                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Инвестиции (руб.)',
-                            data: investmentData,
-                            backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        } else {
-            console.error('Error getting chart data:', data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error updating chart:', error);
-    });
-}
+
 
 // Set up event listeners for real-time updates
 document.getElementById('discount_rate').addEventListener('input', updateMetrics);
