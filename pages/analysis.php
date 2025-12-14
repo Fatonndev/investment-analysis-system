@@ -112,6 +112,9 @@
         <div class="chart-container">
             <h4>Денежные потоки по месяцам</h4>
             <canvas id="cashFlowChart" width="400" height="200"></canvas>
+            <div id="chart-loading" style="display:none; text-align: center; padding: 20px;">
+                <p>Загрузка данных графика...</p>
+            </div>
         </div>
         
         <!-- Sensitivity Analysis -->
@@ -181,66 +184,12 @@
 <script>
 // Cash flow chart
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
+    const projectId = <?php echo $projectId; ?>;
+    const discountRate = <?php echo $discountRate; ?>;
+    const forecastYears = <?php echo $forecastYears; ?>;
     
-    // Prepare data for chart - separate investments and revenues by period
-    const labels = [];
-    const investmentData = []; // For negative values (investments)
-    const revenueData = []; // For positive values (revenues)
-    
-    // Get more detailed data from analysis results
-    const periodInvestments = <?php echo json_encode($analysisResults['period_investments_by_period']); ?>;
-    const periodRevenues = <?php echo json_encode($analysisResults['period_revenues_by_period']); ?>;
-    const periods = <?php echo json_encode($analysisResults['periods']); ?>;
-    
-    // Process all periods with their respective investments and revenues
-    for (let i = 0; i < Math.max(periodInvestments.length, <?php echo $forecastYears; ?> * 12); i++) {
-        // Use period number from the database or just incrementing month number
-        labels.push(periods[i] ? 'Месяц ' + periods[i] : 'Месяц ' + (i + 1));
-        
-        // Add investments as negative values (for red bars going down)
-        const investmentValue = i < periodInvestments.length ? periodInvestments[i] : 0;
-        investmentData.push(-Math.abs(investmentValue)); // Make sure it's negative
-        
-        // Add revenues as positive values (for green bars going up)
-        const revenueValue = i < periodRevenues.length ? periodRevenues[i] : 0;
-        revenueData.push(Math.max(0, revenueValue));
-    }
-    
-    // Don't include initial investments separately - distribute them by months as requested
-    // according to the user's requirement to show monthly investments from database
-    
-    // Store chart instance globally to allow updates
-    window.cashFlowChartInstance = new Chart(ctx1, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Доходы (руб.)',
-                    data: revenueData,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Инвестиции (руб.)',
-                    data: investmentData,
-                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
+    // Load cash flow chart data
+    loadCashFlowChart(projectId, discountRate, forecastYears);
     
     // Forecast chart
     const ctx2 = document.getElementById('forecastChart').getContext('2d');
@@ -291,6 +240,79 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Function to load cash flow chart data from external PHP file
+function loadCashFlowChart(projectId, discountRate, forecastYears) {
+    const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
+    
+    // Show loading indicator
+    document.getElementById('chart-loading').style.display = 'block';
+    
+    // Fetch data from external PHP file
+    fetch('get_cashflow_data.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `project_id=${projectId}&discount_rate=${discountRate}&forecast_years=${forecastYears}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Hide loading indicator
+        document.getElementById('chart-loading').style.display = 'none';
+        
+        if (data.success) {
+            // Destroy existing chart instance if it exists
+            if (window.cashFlowChartInstance) {
+                window.cashFlowChartInstance.destroy();
+            }
+            
+            // Create new chart with received data
+            window.cashFlowChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: data.data,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        } else {
+            console.error('Error loading chart data:', data.error);
+            // Display error message on the chart area
+            ctx1.clearRect(0, 0, ctx1.canvas.width, ctx1.canvas.height);
+            ctx1.font = '14px Arial';
+            ctx1.fillStyle = '#ff0000';
+            ctx1.textAlign = 'center';
+            ctx1.fillText('Ошибка загрузки данных графика: ' + data.error, ctx1.canvas.width/2, ctx1.canvas.height/2);
+        }
+    })
+    .catch(error => {
+        // Hide loading indicator
+        document.getElementById('chart-loading').style.display = 'none';
+        console.error('Error fetching chart data:', error);
+        
+        // Display error message on the chart area
+        const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
+        ctx1.clearRect(0, 0, ctx1.canvas.width, ctx1.canvas.height);
+        ctx1.font = '14px Arial';
+        ctx1.fillStyle = '#ff0000';
+        ctx1.textAlign = 'center';
+        ctx1.fillText('Ошибка подключения к серверу данных', ctx1.canvas.width/2, ctx1.canvas.height/2);
+    });
+}
+
+// Function to refresh the cash flow chart when parameters change
+function refreshCashFlowChart() {
+    const projectId = <?php echo $projectId; ?>;
+    const discountRate = document.getElementById('discount_rate').value;
+    const forecastYears = document.getElementById('forecast_years').value;
+    
+    loadCashFlowChart(projectId, discountRate, forecastYears);
+}
+
 // Dynamic calculation functionality
 function updateMetrics() {
     const discountRate = document.getElementById('discount_rate').value;
@@ -302,7 +324,7 @@ function updateMetrics() {
     document.getElementById('npv-value').textContent = 'Расчет...';
     document.getElementById('irr-value').textContent = 'Расчет...';
     
-    fetch('../calculate_metrics.php', {
+    fetch('calculate_metrics.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -320,6 +342,8 @@ function updateMetrics() {
             }).replace(/\s/g, ' ') + ' руб.';
             document.getElementById('irr-value').textContent = (data.irr * 100).toFixed(2) + '%';
             
+            // Refresh cash flow chart with new parameters
+            refreshCashFlowChart();
         } else {
             console.error('Error calculating metrics:', data.error);
             document.getElementById('roi-value').textContent = 'Ошибка';
@@ -334,7 +358,6 @@ function updateMetrics() {
         document.getElementById('irr-value').textContent = 'Ошибка';
     });
 }
-
 
 
 // Set up event listeners for real-time updates
