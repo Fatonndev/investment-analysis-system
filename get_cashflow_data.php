@@ -39,7 +39,7 @@ try {
     // Обрабатываем все периоды с соответствующими инвестициями и доходами
     for ($i = 0; $i < count($periodRevenues); $i++) {
         // Используем период из базы данных или просто номер месяца
-        $labels[] = isset($periods[$i]) ? 'Месяц ' . $periods[$i] : 'Месяц ' . ($i + 1);
+        $labels[] = isset($periods[$i]) ? $periods[$i] : 'Месяц ' . ($i + 1);
         
         // Добавляем инвестиции как отрицательные значения (для красных столбцов вниз)
         $investmentValue = isset($periodInvestments[$i]) ? $periodInvestments[$i] : 0;

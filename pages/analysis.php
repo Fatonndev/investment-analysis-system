@@ -273,8 +273,30 @@ function loadCashFlowChart(projectId, discountRate, forecastYears) {
                 options: {
                     responsive: true,
                     scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
                         y: {
                             beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toLocaleString('ru-RU') + ' руб.';
+                                    }
+                                    return label;
+                                }
+                            }
                         }
                     }
                 }
