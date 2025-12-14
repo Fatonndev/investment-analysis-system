@@ -753,5 +753,36 @@ class InvestmentAnalysis {
             'months_count' => $monthsCount // Total number of months for reference
         ];
     }
+    
+    /**
+     * Calculate average profitability across all projects
+     */
+    public function calculateAverageProfitability($discountRate = 0.1, $forecastYears = 3) {
+        // Get all projects
+        $projects = $this->db->fetchAll("SELECT id FROM projects");
+        
+        if (empty($projects)) {
+            return 0; // No projects to calculate average
+        }
+        
+        $totalRoi = 0;
+        $validProjectCount = 0;
+        
+        foreach ($projects as $project) {
+            $projectId = $project['id'];
+            
+            // Calculate analysis for each project
+            $analysis = $this->calculateProjectAnalysis($projectId, $discountRate, $forecastYears);
+            
+            // Check if analysis was successful and ROI is available
+            if (!isset($analysis['error']) && isset($analysis['roi']) && $analysis['roi'] !== null) {
+                $totalRoi += floatval($analysis['roi']);
+                $validProjectCount++;
+            }
+        }
+        
+        // Return average ROI if there are valid projects, otherwise return 0
+        return $validProjectCount > 0 ? $totalRoi / $validProjectCount : 0;
+    }
 }
 ?>
