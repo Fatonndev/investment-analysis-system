@@ -1,0 +1,9 @@
+period,cost_type,material_type,cost_per_unit,quantity_used,total_cost,energy_type,route,department,salary_cost,benefits,asset_name,depreciation_amount
+2024-01,raw_material,Углеродистая сталь,1500.00,50.0,75000.00,,,,,,,
+2024-01,energy,,5.50,10000.0,55000.00,Электроэнергия,,,,,,
+2024-01,logistics,,,,,50000.00,,ЖД перевозка,,,,,
+2024-01,labor,,,,,,,"Производство",120000.00,30000.00,,
+2024-01,depreciation,,,,,,,,,,,"Оборудование для прокатки",25000.00
+2024-02,raw_material,Углеродистая сталь,1550.00,60.0,93000.00,,,,,,,
+2024-02,energy,,5.70,12000.0,68400.00,Электроэнергия,,,,,,
+2024-02,depreciation,,,,,,,,,,,"Здание цеха",15000.00

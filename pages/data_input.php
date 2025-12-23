@@ -161,10 +161,64 @@
             header("Location: ?action=data-input&project_id=$projectId&tab=investments");
             exit();
         }
-        elseif ($action === 'import_excel') {
-            // Redirect to prevent re-submission and stay on the import tab
-            header("Location: ?action=data-input&project_id=$projectId&tab=import");
-            exit();
+        elseif ($action === 'import_csv') {
+            // Handle CSV file upload
+            if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
+                $uploadDir = dirname(__DIR__) . '/uploads/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                
+                $fileName = 'csv_import_' . time() . '_' . basename($_FILES['csv_file']['name']);
+                $uploadPath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($_FILES['csv_file']['tmp_name'], $uploadPath)) {
+                    // Process CSV import
+                    require_once dirname(__DIR__) . '/includes/csv_handler.php';
+                    $csvHandler = new CSVHandler($db);
+                    $data_type = $_POST['data_type'];
+                    $errors = [];
+                    
+                    switch ($data_type) {
+                        case 'production':
+                            $errors = $csvHandler->importProductionData($projectId, $uploadPath);
+                            break;
+                        case 'costs':
+                            $errors = $csvHandler->importOperationalCosts($projectId, $uploadPath);
+                            break;
+                        case 'prices':
+                            $errors = $csvHandler->importProductPrices($projectId, $uploadPath);
+                            break;
+                        case 'investments':
+                            $errors = $csvHandler->importInvestmentData($projectId, $uploadPath);
+                            break;
+                        default:
+                            $errors = ['Invalid data type specified'];
+                    }
+                    
+                    // Remove the uploaded file after processing
+                    unlink($uploadPath);
+                    
+                    // Redirect with success/error message
+                    $tab = $data_type === 'investments' ? 'investments' : ($data_type === 'prices' ? 'prices' : ($data_type === 'costs' ? 'costs' : 'production'));
+                    $message = empty($errors) ? 'CSV import completed successfully' : 'CSV import completed with errors: ' . implode(', ', $errors);
+                    $messageType = empty($errors) ? 'success' : 'error';
+                    
+                    $redirectUrl = "?action=data-input&project_id=$projectId&tab=$tab&message=" . urlencode($message) . "&message_type=$messageType";
+                    header("Location: $redirectUrl");
+                    exit();
+                } else {
+                    $error = "Failed to upload file";
+                    $redirectUrl = "?action=data-input&project_id=$projectId&tab=import&message=" . urlencode($error) . "&message_type=error";
+                    header("Location: $redirectUrl");
+                    exit();
+                }
+            } else {
+                $error = "No file uploaded or upload error";
+                $redirectUrl = "?action=data-input&project_id=$projectId&tab=import&message=" . urlencode($error) . "&message_type=error";
+                header("Location: $redirectUrl");
+                exit();
+            }
         }
     }
     // Handle GET requests for deletion
@@ -620,12 +674,21 @@
         
         <!-- Import Data Tab -->
         <div id="import-tab" class="tab-pane">
-            <h3>Импорт данных из Excel</h3>
+            <h3>Импорт данных из CSV</h3>
+            <?php
+            // Display message if present
+            if (isset($_GET['message'])) {
+                $message = htmlspecialchars($_GET['message']);
+                $messageType = $_GET['message_type'] ?? 'info';
+                $alertClass = $messageType === 'error' ? 'alert-danger' : ($messageType === 'success' ? 'alert-success' : 'alert-info');
+                echo "<div class='alert $alertClass'>$message</div>";
+            }
+            ?>
             <form method="POST" enctype="multipart/form-data" action="?action=data-input&project_id=<?php echo $projectId; ?>">
-                <input type="hidden" name="action" value="import_excel">
+                <input type="hidden" name="action" value="import_csv">
                 <div class="form-group">
-                    <label for="excel_file">Выберите Excel файл:</label>
-                    <input type="file" id="excel_file" name="excel_file" accept=".xls,.xlsx" required>
+                    <label for="csv_file">Выберите CSV файл:</label>
+                    <input type="file" id="csv_file" name="csv_file" accept=".csv" required>
                 </div>
                 <div class="form-group">
                     <label for="data_type">Тип данных для импорта:</label>
@@ -638,7 +701,7 @@
                 </div>
                 <button type="submit" class="btn-primary">Импортировать</button>
             </form>
-            <p class="help-text">Поддерживаются файлы Excel (.xls, .xlsx). Файл должен содержать правильные заголовки столбцов.</p>
+            <p class="help-text">Поддерживаются файлы CSV (.csv). Файл должен содержать правильные заголовки столбцов.</p>
         </div>
     </div>
 </div>

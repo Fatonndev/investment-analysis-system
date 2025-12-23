@@ -1,0 +1,4 @@
+period,cost_type,energy_type,cost_per_unit,quantity_used,total_cost
+2024-01,energy,Электроэнергия,5.50,10000.0,55000.00
+2024-02,energy,Электроэнергия,5.70,12000.0,68400.00
+2024-03,energy,Природный газ,3.20,8000.0,25600.00
