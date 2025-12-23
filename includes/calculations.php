@@ -52,24 +52,7 @@ class InvestmentAnalysis {
         }
         return $npv;
     }
-    
-    /**
-     * Calculate the derivative of NPV function for Newton-Raphson method
-     */
-    private function calculateNPVDerivativeSimple($cashFlows, $rate) {
-        $derivative = 0;
-        for ($i = 1; $i < count($cashFlows); $i++) {
-            $denominator = pow(1 + $rate, $i + 1);
-            if (abs($denominator) < 1e-10) {
-                continue; // Skip to prevent division by zero
-            }
-            if (abs($denominator) > 1e10) { // Prevent overflow
-                continue;
-            }
-            $derivative += -$i * $cashFlows[$i] / $denominator;
-        }
-        return $derivative;
-    }
+
     
     /**
      * Calculate payback period
