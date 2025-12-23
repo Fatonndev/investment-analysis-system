@@ -1,0 +1,4 @@
+period,cost_type,route,cost_per_unit,quantity_used,total_cost
+2024-01,logistics,ЖД перевозка,2000.00,25.0,50000.00
+2024-02,logistics,Автоперевозка,2200.00,30.0,66000.00
+2024-03,logistics,Морские перевозки,2500.00,15.0,37500.00

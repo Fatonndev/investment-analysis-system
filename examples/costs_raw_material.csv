@@ -1,0 +1,4 @@
+period,cost_type,material_type,cost_per_unit,quantity_used,total_cost
+2024-01,raw_material,Углеродистая сталь,1500.00,50.0,75000.00
+2024-02,raw_material,Углеродистая сталь,1550.00,60.0,93000.00
+2024-03,raw_material,Нержавеющая сталь,3000.00,30.0,90000.00

@@ -1,0 +1,4 @@
+period,cost_type,asset_name,depreciation_amount
+2024-01,depreciation,Оборудование для прокатки,25000.00
+2024-02,depreciation,Здание цеха,15000.00
+2024-03,depreciation,Транспортные средства,12000.00
